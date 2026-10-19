@@ -17,14 +17,18 @@
   .card h2 { font-size: 15px; margin: 0 0 6px; }
   .card p, .card li { color: var(--dim); font-size: 15px; margin: 0; }
   ol { padding-left: 20px; margin: 0; }
+  .notice { margin: 0 0 20px; padding: 12px 16px; border-radius: 12px; background: #ff9f0a22; color: var(--text); font-size: 15px; }
+  .after { color: var(--dim); font-size: 15px; margin: 18px 0 0; }
 </style>
 </head>
 <body>
 <main>
   <img src="icon-512.png" alt="">
   <h1>Sheetmusic</h1>
-  <p class="version">Viewer and Editor · Version 0.1.0 (Build 7)</p>
-  <a class="button" href="itms-services://?action=download-manifest&url=https%3A%2F%2Feddytheeagle.github.io%2Fsheetmusic_creator_releases%2Fios%2Fmanifest.plist">Installieren · Install</a>
+  <p class="version">Viewer and Editor · Version 0.1.8 (Build 8)</p>
+  <p class="notice" id="safari" hidden>Bitte diese Seite in <b>Safari</b> öffnen (nicht in Chrome oder aus WhatsApp heraus), sonst passiert beim Tippen nichts.<br>Please open this page in Safari.</p>
+  <a class="button" id="install" href="itms-services://?action=download-manifest&url=https%3A%2F%2Feddytheeagle.github.io%2Fsheetmusic_creator_releases%2Fios%2Fmanifest.plist">Installieren · Install</a>
+  <p class="after" id="after" hidden>iOS fragt jetzt, ob Sheetmusic installiert werden soll. Danach lädt die App auf dem Home-Bildschirm (das Symbol ist kurz grau).<br>Kommt keine Frage: die Seite in Safari neu laden und noch einmal tippen.</p>
   <div class="card">
     <h2>So geht's</h2>
     <ol>
@@ -38,5 +42,13 @@
     <p>Open this page in Safari on a registered iPad or iPhone and tap “Install”. The app appears on the home screen.</p>
   </div>
 </main>
+<script>
+  // Install links (itms-services) only work in Safari on an iPhone or iPad.
+  var ua = navigator.userAgent
+  var apple = /iPhone|iPad|iPod/.test(ua) || (navigator.platform === 'MacIntel' && navigator.maxTouchPoints > 1)
+  var safari = /Safari/.test(ua) && !/CriOS|FxiOS|EdgiOS|OPiOS|GSA|FBAN|FBAV|Instagram|WhatsApp/.test(ua)
+  if (!apple || !safari) document.getElementById('safari').hidden = false
+  document.getElementById('install').addEventListener('click', function () { document.getElementById('after').hidden = false })
+</script>
 </body>
 </html>
