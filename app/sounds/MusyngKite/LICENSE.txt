@@ -1,0 +1,3 @@
+Sounds: "MusyngKite" General MIDI soundfont by Benjamin Gleitzman,
+https://github.com/gleitz/midi-js-soundfonts, licensed CC BY-SA 3.0
+(https://creativecommons.org/licenses/by-sa/3.0/). Downloaded by scripts/fetch-sounds.mjs.
