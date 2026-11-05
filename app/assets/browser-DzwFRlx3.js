@@ -1,0 +1,1 @@
+export{c as zipSync}from"./browser--n2KL253.js";

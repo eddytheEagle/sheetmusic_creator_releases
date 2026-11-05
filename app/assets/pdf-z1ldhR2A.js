@@ -1,0 +1,1 @@
+export{n as openPdf}from"./pdf-B3VSVKl5.js";

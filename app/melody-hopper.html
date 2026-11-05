@@ -1,0 +1,2549 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no,viewport-fit=cover">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="theme-color" content="#f6f4ef">
+<title>Melody Hopper</title>
+<style>
+  html, body { margin: 0; height: 100%; background: #f6f4ef; color: #1d1d1f; overflow: hidden; overscroll-behavior: none;
+    font-family: -apple-system, "Segoe UI", Roboto, sans-serif; touch-action: none; user-select: none; -webkit-user-select: none;
+    -webkit-touch-callout: none; -webkit-tap-highlight-color: transparent; }
+  canvas { display: block; position: fixed; inset: 0; width: 100vw; height: 100vh; }
+  .ov { position: fixed; inset: 0; display: flex; background: rgba(246,244,239,.84); box-sizing: border-box;
+    padding: env(safe-area-inset-top) env(safe-area-inset-right) env(safe-area-inset-bottom) env(safe-area-inset-left);
+    overflow-y: auto; -webkit-overflow-scrolling: touch; touch-action: pan-y; overscroll-behavior: contain; }
+  .ov > .card { margin: auto; } /* centred, but scrolls from the top when taller than the screen */
+  .card { background: #fff; border-radius: 20px; box-shadow: 0 10px 40px rgba(0,0,0,.12); padding: 22px 24px; margin: 16px;
+    max-width: 460px; width: calc(100% - 32px); box-sizing: border-box; text-align: center; touch-action: pan-y; }
+  h1 { margin: 0 0 2px; font-size: 26px; letter-spacing: -.3px; }
+  .sub { color: #666; margin: 0 0 16px; font-size: 14px; line-height: 1.4; }
+  .row { display: flex; gap: 8px; align-items: center; justify-content: center; margin: 10px 0; flex-wrap: wrap; }
+  label { font-size: 14px; color: #444; }
+  #songSearch { font: inherit; font-size: 15px; padding: 8px 12px; border-radius: 10px; border: 1px solid #ccc; background: #fff; width: 100%; max-width: 300px; box-sizing: border-box; }
+  select { font: inherit; font-size: 15px; padding: 8px 10px; border-radius: 10px; border: 1px solid #ccc; background: #fff; max-width: 260px; }
+  button { font: inherit; font-size: 15px; border: 0; border-radius: 12px; padding: 11px 18px; cursor: pointer; background: #ececf0; color: #1d1d1f; touch-action: manipulation; }
+  button.primary { background: #5b4bdb; color: #fff; font-weight: 600; }
+  button.wide { width: 100%; padding: 14px; font-size: 17px; margin-top: 6px; }
+  .seg { display: inline-flex; background: #ececf0; border-radius: 12px; padding: 3px; }
+  .seg button { background: transparent; padding: 8px 14px; border-radius: 9px; }
+  .seg button.on { background: #fff; box-shadow: 0 1px 4px rgba(0,0,0,.12); font-weight: 600; }
+  .msg { font-size: 13px; color: #666; min-height: 18px; }
+  .msg.err { color: #c0392b; }
+  details { text-align: left; font-size: 14px; color: #444; margin-top: 12px; line-height: 1.5; }
+  summary { cursor: pointer; color: #5b4bdb; font-weight: 600; text-align: center; }
+  .stars { font-size: 40px; color: #f2b33d; letter-spacing: 4px; margin: 4px 0; }
+  .stars .off { color: #e1ddd5; }
+  #topBtns { position: fixed; top: calc(10px + env(safe-area-inset-top)); right: calc(10px + env(safe-area-inset-right)); display: flex; gap: 8px; }
+  .round { width: 44px; height: 44px; border-radius: 22px; padding: 0; font-size: 15px; background: rgba(255,255,255,.92); box-shadow: 0 2px 8px rgba(0,0,0,.12); }
+  #duckBtn { position: fixed; left: calc(14px + env(safe-area-inset-left)); bottom: calc(14px + env(safe-area-inset-bottom)); width: 84px; height: 84px;
+    border-radius: 42px; background: rgba(255,255,255,.88); box-shadow: 0 3px 12px rgba(0,0,0,.15); font-size: 26px; line-height: 1; padding: 0; }
+  #duckBtn span { display: block; font-size: 12px; color: #666; margin-top: 2px; }
+  #duckBtn.on { background: #5b4bdb; color: #fff; }
+  #duckBtn.on span { color: #ddd; }
+  .hidden, [hidden] { display: none !important; }
+  .seg button:disabled { color: #aaa; }
+  #choir { margin: 12px 0 4px; background: #f6f4ef; border-radius: 14px; padding: 10px; text-align: left; }
+  .choirHead { font-weight: 700; font-size: 14px; margin: 0 4px 6px; color: #5b4bdb; }
+  .choirRow { display: flex; width: 100%; justify-content: space-between; background: transparent; padding: 8px 10px; font-size: 14px; border-radius: 10px; }
+  .choirRow.on { background: #fff; box-shadow: 0 1px 4px rgba(0,0,0,.1); font-weight: 600; }
+  .choirRow .st { color: #f2b33d; letter-spacing: 2px; }
+  .choirRow .st .off, .stars .off { color: #e1ddd5; }
+  #board { margin: 10px 0 4px; background: #f6f4ef; border-radius: 14px; padding: 10px; text-align: left; font-size: 14px; }
+  .boardRow { display: grid; grid-template-columns: 22px 1fr auto auto; gap: 8px; padding: 5px 6px; border-radius: 8px; align-items: baseline; }
+  .boardRow.me { background: #fff; font-weight: 700; box-shadow: 0 1px 4px rgba(0,0,0,.08); }
+  .boardRow .rk { color: #999; text-align: right; }
+  .boardRow .pt { color: #666; font-size: 12px; }
+  .boardRow .sc { font-variant-numeric: tabular-nums; }
+  .boardSub { font-weight: 700; font-size: 13px; color: #666; margin: 8px 4px 2px; }
+  @media (max-height: 520px) {
+    .card { padding: 14px 18px; margin: 10px; }
+    h1 { font-size: 21px; }
+    .sub { margin-bottom: 8px; font-size: 13px; }
+    .row { margin: 6px 0; }
+    button.wide { padding: 11px; font-size: 16px; }
+    .stars { font-size: 30px; }
+  }
+</style>
+</head>
+<style>
+  .card { position: relative }
+  .closeBtn { position: absolute; top: 12px; right: 12px; width: 34px; height: 34px; border-radius: 50%; padding: 0; font-size: 15px; line-height: 34px; }
+</style>
+<body>
+<canvas id="c"></canvas>
+<div id="safe" style="position:fixed;visibility:hidden;pointer-events:none;padding:env(safe-area-inset-top) 0 env(safe-area-inset-bottom) env(safe-area-inset-left)"></div>
+<div id="topBtns" class="hidden"><button id="pauseBtn" class="round" aria-label="Pause">❚❚</button></div>
+
+<div id="menu" class="ov"><div class="card">
+  <button id="closeBtn" class="closeBtn hidden" aria-label="Close">✕</button>
+  <h1 id="title">♪ Melody Hopper</h1>
+  <p class="sub" data-t="Every song becomes its own level. Land on the notes to play the melody.">Every song becomes its own level. Land on the notes to play the melody.</p>
+  <div class="row"><input id="songSearch" type="search" autocomplete="off" spellcheck="false"></div>
+  <div class="row"><label for="song" data-t="Song">Song</label><select id="song"></select></div>
+  <div class="row" id="partRow" hidden><label for="part" data-t="Part">Part</label><select id="part"></select></div>
+  <div class="row" id="loadRow"><button id="loadBtn" data-t="Load song file…">Load song file…</button><input type="file" id="file" hidden></div>
+  <div class="msg" id="loadMsg" data-t=".smc from your program, or MusicXML (.musicxml, .mxl)">.smc from your program, or MusicXML (.musicxml, .mxl)</div>
+  <div class="row" id="verseRow" hidden><label data-t="Verse">Verse</label><div class="seg" id="verses"></div></div>
+  <div id="choir" hidden></div>
+  <div id="board" hidden></div>
+  <div class="row"><div class="seg" id="diff"><button data-d="easy" data-t="Easy">Easy</button><button data-d="normal" data-t="Normal">Normal</button><button data-d="hard" data-t="Hard">Hard</button></div></div>
+  <button class="primary wide" id="playBtn" data-t="Play">Play</button>
+  <div class="msg" id="bestLine"></div>
+  <details><summary data-t="How to play">How to play</summary><div id="howto"></div><div hidden>
+    <b>Tap</b> (or Space) to jump, <b>hold</b> for a higher jump. Hold the <b>▼ duck</b> button (or ↓) to duck.<br>
+    Every note you land on sounds, so a clean run plays the song. Rest stones are silent.<br>
+    <b>The rule:</b> jump on any enemy to stomp it — walking quarter rests, flying eighth rests and red sharps ♯. Running into them hurts. You can also duck under the flying rests. Watch for cracks and staccato notes that crumble.<br>
+    <b>Bubbles:</b> • double jump · 𝄐 shield · <i>rit.</i> slow motion · ⌒ magnet · <i>acc.</i> faster with double points.<br>
+    Collect the lyrics (or coins) floating above the notes. Falling sends you back a bit, with a moment to get ready; fall twice at the same spot and you get a shield.<br>
+    <b>Verses:</b> win verse 1 to unlock verse 2 (a bit faster), and so on. <b>Choir challenge:</b> with a choir file, collect the stars of every voice part.
+  </div></details>
+  <div class="row"><button id="fsBtn" data-t="Fullscreen">Fullscreen</button></div>
+  <div class="msg" id="tip"></div>
+</div></div>
+
+<div id="pause" class="ov hidden"><div class="card">
+  <h1 data-t="Paused">Paused</h1><p class="sub" id="pauseSong"></p>
+  <button class="primary wide" id="resumeBtn" data-t="Resume">Resume</button>
+  <div class="row"><button id="restartBtn" data-t="Restart">Restart</button><button id="pMenuBtn" data-t="Menu">Menu</button></div>
+</div></div>
+
+<div id="end" class="ov hidden"><div class="card">
+  <h1 id="endTitle"></h1>
+  <div class="stars" id="endStars"></div>
+  <p class="sub" id="endText"></p>
+  <button class="primary wide hidden" id="bossBtn"></button>
+  <button class="primary wide hidden" id="encoreBtn"></button>
+  <button class="primary wide" id="againBtn" data-t="Play again">Play again</button>
+  <div class="row"><button id="listenBtn" data-t="♪ Listen">♪ Listen</button><button id="eMenuBtn" data-t="Menu">Menu</button></div>
+</div></div>
+
+<script id="engine">
+'use strict'
+// =====================================================================================
+// ENGINE (pure, no DOM drawing): songs -> level generator -> physics. Tested headlessly.
+// World units: 1 = one staff space. y = 0 is the bottom staff line, up is positive.
+// =====================================================================================
+
+let LANG = 'en'
+const TEXTS = { de: {} } // filled by the UI script; English is the key itself
+const T = (k, vars) => { let t = (TEXTS[LANG] && TEXTS[LANG][k]) || k; if (vars) for (const v in vars) t = t.split('{' + v + '}').join(vars[v]); return t }
+const LET = 'CDEFGAB', SEM = [0, 2, 4, 5, 7, 9, 11]
+function pitchOf(step, alter, octave) {
+  const li = LET.indexOf(step)
+  return { midi: (octave + 1) * 12 + SEM[li] + alter, dia: octave * 7 + li }
+}
+
+// Built-in public-domain melodies. "E4:1.5" = pitch + length in beats (default 1), "r" = rest.
+const BUILTIN = [
+  { id: 'ode', cat: 'classics', tonic: 0, title: 'Ode to Joy', bpm: 112, bpb: 4, pickup: 0, notes:
+    'E4 E4 F4 G4 | G4 F4 E4 D4 | C4 C4 D4 E4 | E4:1.5 D4:.5 D4:2 | E4 E4 F4 G4 | G4 F4 E4 D4 | C4 C4 D4 E4 | D4:1.5 C4:.5 C4:2 | ' +
+    'D4 D4 E4 C4 | D4 E4:.5 F4:.5 E4 C4 | D4 E4:.5 F4:.5 E4 D4 | C4 D4 G3:2 | E4 E4 F4 G4 | G4 F4 E4 D4 | C4 C4 D4 E4 | D4:1.5 C4:.5 C4:2' },
+  { id: 'twinkle', cat: 'kids', tonic: 0, title: 'Twinkle, Twinkle, Little Star', bpm: 104, bpb: 4, pickup: 0, notes:
+    'C4 C4 G4 G4 | A4 A4 G4:2 | F4 F4 E4 E4 | D4 D4 C4:2 | G4 G4 F4 F4 | E4 E4 D4:2 | G4 G4 F4 F4 | E4 E4 D4:2 | C4 C4 G4 G4 | A4 A4 G4:2 | F4 F4 E4 E4 | D4 D4 C4:2' },
+  { id: 'frere', cat: 'kids', tonic: 0, title: 'Frère Jacques', bpm: 116, bpb: 4, pickup: 0, notes:
+    'C4 D4 E4 C4 | C4 D4 E4 C4 | E4 F4 G4:2 | E4 F4 G4:2 | G4:.5 A4:.5 G4:.5 F4:.5 E4 C4 | G4:.5 A4:.5 G4:.5 F4:.5 E4 C4 | C4 G3 C4:2 | C4 G3 C4:2' },
+  { id: 'grace', cat: 'hymns', tonic: 7, title: 'Amazing Grace', bpm: 92, bpb: 3, pickup: 1, notes:
+    'D4 | G4:2 B4:.5 G4:.5 | B4:2 A4 | G4:2 E4 | D4:2 D4 | G4:2 B4:.5 G4:.5 | B4:2 A4 | D5:3 | r:2 B4 | D5:2 B4:.5 G4:.5 | B4:2 A4 | G4:2 E4 | D4:2 D4 | G4:2 B4:.5 G4:.5 | B4:2 A4 | G4:3' },
+  { id: 'canon', cat: 'classics', tonic: 2, title: 'Canon in D (Pachelbel)', bpm: 84, bpb: 4, pickup: 0, notes:
+    'F#5:2 E5:2 | D5:2 C#5:2 | B4:2 A4:2 | B4:2 C#5:2 | D5:2 C#5:2 | B4:2 A4:2 | G4:2 F#4:2 | G4:2 E4:2 | ' +
+    'D4 F#4 A4 G4 | F#4 D4 F#4 E4 | D4 B3 D4 A4 | G4 B4 A4 G4 | F#4 D4 E4 C#5 | D5 F#5 A5 A4 | B4 G4 A4 F#4 | D4 D5 D5:1.5 C#5:.5 | ' +
+    'D5:.5 C#5:.5 D5:.5 D4:.5 C#4:.5 A4:.5 E4:.5 F#4:.5 | D4:.5 D5:.5 C#5:.5 B4:.5 C#5:.5 F#5:.5 A5:.5 B5:.5 | ' +
+    'G5:.5 F#5:.5 E5:.5 G5:.5 F#5:.5 E5:.5 D5:.5 C#5:.5 | B4:.5 A4:.5 G4:.5 F#4:.5 E4:.5 G4:.5 F#4:.5 E4:.5 | D4:4' },
+  { id: 'morning', cat: 'classics', tonic: 0, title: 'Morning Mood (Grieg)', bpm: 110, bpb: 3, pickup: 0, notes:
+    'G4 E4:.5 D4 C4:.5 | D4 E4:.5 G4 E4:.5 | D4 C4:.5 D4 E4:.5 | D4 E4:.5 G4 E4:.5 | G4 A4:.5 E4 A4:.5 | G4 E4:.5 D4 C4:.5 | ' +
+    'G4 E4:.5 D4 C4:.5 | D4 E4:.5 G4 E4:.5 | D4 C4:.5 D4 E4:.5 | D4 E4:.5 G4 E4:.5 | G4 A4:.5 E4 A4:.5 | G4 E4:.5 D4 C4:.5 | C4:3' },
+  { id: 'mountain', cat: 'classics', tonic: 11, minor: true, title: 'In the Hall of the Mountain King', bpm: 120, bpb: 4, pickup: 0, notes:
+    'B3:.5 C#4:.5 D4:.5 E4:.5 F#4:.5 D4:.5 F#4 | F4:.5 C#4:.5 F4 E4:.5 C4:.5 E4 | B3:.5 C#4:.5 D4:.5 E4:.5 F#4:.5 D4:.5 F#4:.5 B4:.5 | A4:.5 F#4:.5 D4:.5 F#4:.5 A4:2 | ' +
+    'B3:.5 C#4:.5 D4:.5 E4:.5 F#4:.5 D4:.5 F#4 | F4:.5 C#4:.5 F4 E4:.5 C4:.5 E4 | B3:.5 C#4:.5 D4:.5 E4:.5 F#4:.5 D4:.5 F#4:.5 B4:.5 | A4:.5 F#4:.5 D4:.5 F#4:.5 A4:2 | ' +
+    'F#4:.5 G#4:.5 A#4:.5 B4:.5 C#5:.5 A#4:.5 C#5 | D5:.5 A#4:.5 D5 C#5:.5 A#4:.5 C#5 | F#4:.5 G#4:.5 A#4:.5 B4:.5 C#5:.5 A#4:.5 C#5 | D5:.5 A#4:.5 D5 C#5:2 | ' +
+    'B3:.5 C#4:.5 D4:.5 E4:.5 F#4:.5 D4:.5 F#4 | F4:.5 C#4:.5 F4 E4:.5 C4:.5 E4 | B3:.5 C#4:.5 D4:.5 E4:.5 F#4:.5 D4:.5 F#4:.5 B4:.5 | A4:.5 F#4:.5 D4:.5 F#4:.5 B4:2' },
+  { id: 'greensleeves', cat: 'classics', tonic: 9, minor: true, title: 'Greensleeves', bpm: 120, bpb: 3, pickup: 1, notes:
+    'A4 | C5:2 D5 | E5:1.5 F5:.5 E5 | D5:2 B4 | G4:1.5 A4:.5 B4 | C5:2 A4 | A4:1.5 G#4:.5 A4 | B4:2 G#4 | E4:2 A4 | ' +
+    'C5:2 D5 | E5:1.5 F5:.5 E5 | D5:2 B4 | G4:1.5 A4:.5 B4 | C5:1.5 B4:.5 A4 | G#4:1.5 F#4:.5 G#4 | A4:3 | ' +
+    'G5:3 | G5:1.5 F#5:.5 E5 | D5:2 B4 | G4:1.5 A4:.5 B4 | C5:2 A4 | A4:1.5 G#4:.5 A4 | B4:2 G#4 | E4:3 | ' +
+    'G5:3 | G5:1.5 F#5:.5 E5 | D5:2 B4 | G4:1.5 A4:.5 B4 | C5:1.5 B4:.5 A4 | G#4:1.5 F#4:.5 G#4 | A4:3' },
+  { id: 'brahms', cat: 'classics', tonic: 0, title: "Brahms' Lullaby", bpm: 84, bpb: 3, pickup: 1, notes:
+    'E4:.5 E4:.5 | G4:2 E4:.5 E4:.5 | G4:2 E4:.5 G4:.5 | C5 B4:1.5 A4:.5 | A4 G4 D4:.5 E4:.5 | F4 D4 D4:.5 E4:.5 | F4:2 D4:.5 F4:.5 | ' +
+    'B4:.5 A4:.5 G4 B4 | C5:2 C4:.5 C4:.5 | C5:2 A4:.5 F4:.5 | G4:2 E4:.5 C4:.5 | F4 G4 A4 | G4:2 C4:.5 C4:.5 | C5:2 A4:.5 F4:.5 | G4:2 E4:.5 C4:.5 | F4 E4 D4 | C4:3' },
+  { id: 'mcdonald', cat: 'kids', tonic: 7, title: 'Old MacDonald', bpm: 126, bpb: 4, pickup: 0, notes:
+    'G4 G4 G4 D4 | E4 E4 D4:2 | B4 B4 A4 A4 | G4:3 D4 | G4 G4 G4 D4 | E4 E4 D4:2 | B4 B4 A4 A4 | G4:3 D4:.5 D4:.5 | ' +
+    'G4 G4 G4 D4:.5 D4:.5 | G4 G4 G4:2 | G4:.5 G4:.5 G4 G4:.5 G4:.5 G4 | G4:.5 G4:.5 G4:.5 G4:.5 G4 G4 | G4 G4 G4 D4 | E4 E4 D4:2 | B4 B4 A4 A4 | G4:4' },
+  { id: 'entchen', cat: 'kids', tonic: 0, title: 'Alle meine Entchen', bpm: 112, bpb: 4, pickup: 0, notes:
+    'C4 D4 E4 F4 | G4:2 G4:2 | A4 A4 A4 A4 | G4:4 | A4 A4 A4 A4 | G4:4 | F4 F4 F4 F4 | E4:2 E4:2 | D4 D4 D4 D4 | C4:4' },
+  { id: 'haenschen', cat: 'kids', tonic: 0, title: 'H\u00e4nschen klein', bpm: 116, bpb: 4, pickup: 0, notes:
+    'G4 E4 E4:2 | F4 D4 D4:2 | C4 D4 E4 F4 | G4 G4 G4:2 | G4 E4 E4:2 | F4 D4 D4:2 | C4 E4 G4 G4 | C4:4 | ' +
+    'D4 D4 D4 D4 | D4 E4 F4:2 | E4 E4 E4 E4 | E4 F4 G4:2 | G4 E4 E4:2 | F4 D4 D4:2 | C4 E4 G4 G4 | C4:4' },
+  { id: 'jingle', cat: 'christmas', tonic: 0, title: 'Jingle Bells', bpm: 120, bpb: 4, pickup: 0, notes:
+    'G3 E4 D4 C4 | G3:3 G3:.5 G3:.5 | G3 E4 D4 C4 | A3:4 | A3 F4 E4 D4 | B3:4 | G4 G4 F4 D4 | E4:4 | ' +
+    'G3 E4 D4 C4 | G3:4 | G3 E4 D4 C4 | A3:3 A3 | A3 F4 E4 D4 | G4 G4 G4 G4 | A4 G4 F4 D4 | C4:4 | ' +
+    'E4 E4 E4:2 | E4 E4 E4:2 | E4 G4 C4:1.5 D4:.5 | E4:4 | F4 F4 F4:1.5 F4:.5 | F4 E4 E4 E4:.5 E4:.5 | E4 D4 D4 E4 | D4:2 G4:2 | ' +
+    'E4 E4 E4:2 | E4 E4 E4:2 | E4 G4 C4:1.5 D4:.5 | E4:4 | F4 F4 F4 F4 | F4 E4 E4 E4:.5 E4:.5 | G4 G4 F4 D4 | C4:4' },
+  { id: 'silent', cat: 'christmas', tonic: 0, title: 'Silent Night', bpm: 100, bpb: 3, pickup: 0, notes:
+    'G4:1.5 A4:.5 G4 | E4:3 | G4:1.5 A4:.5 G4 | E4:3 | D5:2 D5 | B4:3 | C5:2 C5 | G4:3 | ' +
+    'A4:2 A4 | C5:1.5 B4:.5 A4 | G4:1.5 A4:.5 G4 | E4:3 | A4:2 A4 | C5:1.5 B4:.5 A4 | G4:1.5 A4:.5 G4 | E4:3 | ' +
+    'D5:2 D5 | F5:1.5 D5:.5 B4 | C5:3 | E5:3 | C5:1.5 G4:.5 E4 | G4:1.5 F4:.5 D4 | C4:3 | C4:3' },
+  { id: 'ocome', cat: 'christmas', tonic: 7, title: 'O Come, All Ye Faithful', bpm: 100, bpb: 4, pickup: 1, notes:
+    'G4 | G4:2 D4 G4 | A4:2 D4:2 | B4 A4 B4 C5 | B4:2 A4 G4 | G4:2 F#4 E4 | F#4 G4 A4 B4 | F#4:2 E4:1.5 D4:.5 | D4:3 r | ' +
+    'D5:2 C5 B4 | C5:2 B4:2 | A4 B4 G4 A4 | F#4:1.5 E4:.5 D4 G4 | G4 F#4 G4 A4 | G4:2 D4 B4 | B4 A4 B4 C5 | B4:2 A4 B4 | ' +
+    'C5 B4 A4 G4 | F#4:2 G4 C5 | B4:2 A4:1.5 G4:.5 | G4:4' },
+  { id: 'auld', cat: 'hymns', tonic: 5, title: 'Auld Lang Syne', bpm: 96, bpb: 4, pickup: 1, notes:
+    'C4 | F4:1.5 F4:.5 F4 A4 | G4:1.5 F4:.5 G4 A4 | F4:1.5 F4:.5 A4 C5 | D5:3 D5 | C5:1.5 A4:.5 A4 F4 | G4:1.5 F4:.5 G4 A4 | F4:1.5 D4:.5 D4 C4 | F4:3 D5 | ' +
+    'C5:1.5 A4:.5 A4 F4 | G4:1.5 F4:.5 G4 D5 | C5:1.5 A4:.5 A4 C5 | D5:3 F5 | C5:1.5 A4:.5 A4 F4 | G4:1.5 F4:.5 G4 A4 | F4:1.5 D4:.5 D4 C4 | F4:4' },
+  { id: 'saints', cat: 'hymns', tonic: 0, title: 'When the Saints', bpm: 132, bpb: 4, pickup: 3, notes:
+    'C4 E4 F4 | G4:4 | r C4 E4 F4 | G4:4 | r C4 E4 F4 | G4:2 E4:2 | C4:2 E4:2 | D4:4 | r E4 E4 D4 | C4:3 C4 | E4:2 G4:2 | G4 F4:3 | ' +
+    'r E4 F4 G4 | E4:2 C4:2 | D4:2 D4:2 | C4:4' },
+]
+const CATS = [['classics', 'Classics'], ['kids', 'Kids'], ['christmas', 'Christmas'], ['hymns', 'Hymns & folk']]
+// Endless mode: rounds of these, each in a new key (up a fourth), every third round in the other mode, a bit faster.
+const ENDLESS = ['mountain', 'canon', 'ode', 'morning', 'jingle', 'greensleeves', 'saints', 'auld']
+const KEYNAMES = { en: ['C', 'D\u266d', 'D', 'E\u266d', 'E', 'F', 'F\u266f', 'G', 'A\u266d', 'A', 'B\u266d', 'B'],
+  de: ['C', 'Des', 'D', 'Es', 'E', 'F', 'Fis', 'G', 'As', 'A', 'B', 'H'] }
+// round 1 = the song as written. tonic/minor: known for the built-ins (null for library songs: transposed only).
+function endlessSong(base, round, tonic, minor) {
+  const k = round - 1
+  let ss = 5 * k, sd = 3 * k
+  while (ss > 6) { ss -= 12; sd -= 7 }
+  const flip = tonic != null && round % 3 === 0
+  const newMinor = flip ? !minor : !!minor
+  const tn = tonic != null ? (tonic + ss + 120) % 12 : null
+  const notes = base.notes.map((n) => {
+    let midi = n.midi + ss
+    if (flip) {
+      const deg = (midi - tn + 120) % 12
+      if (!minor && (deg === 4 || deg === 9 || deg === 11)) midi -= 1
+      if (minor && (deg === 3 || deg === 8 || deg === 10)) midi += 1
+    }
+    return Object.assign({}, n, { midi, dia: n.dia + sd })
+  })
+  const kn = tn == null ? '' : (KEYNAMES[LANG] || KEYNAMES.en)[tn]
+  const keyName = tn == null ? T('new key') : LANG === 'de' ? (newMinor ? kn.toLowerCase() + '-Moll' : kn + '-Dur') : kn + (newMinor ? ' minor' : ' major')
+  return Object.assign({}, base, { notes, warp: null, bpm: Math.min(base.bpm * 1.6, base.bpm * Math.pow(1.06, k)), keyName, round,
+    title: base.title, partName: (base.partName || '') + '#' + round })
+}
+
+function songFromTokens(t) {
+  let beat = 0
+  const notes = []
+  for (const tok of t.notes.split(/\s+/)) {
+    if (!tok || tok === '|') continue
+    const [n, d] = tok.split(':')
+    const dur = d ? parseFloat(d) : 1
+    if (n !== 'r') {
+      const m = /^([A-G])([#b]?)(\d)$/.exec(n)
+      notes.push({ ...pitchOf(m[1], m[2] === '#' ? 1 : m[2] === 'b' ? -1 : 0, +m[3]), beat, dur })
+    }
+    beat += dur
+  }
+  const bars = [0]
+  for (let b = t.pickup || t.bpb; b < beat - 1e-6; b += t.bpb) bars.push(b)
+  return { title: t.title, bpm: t.bpm, notes, bars, keyChanges: [], total: beat, verses: [], hasLyrics: false, kind: t.cat === 'classics' ? 'inst' : 'solo' }
+}
+
+// ---------- MusicXML ----------
+const kids = (el, name) => Array.from(el.children).filter((c) => c.tagName === name)
+const kid = (el, name) => Array.from(el.children).find((c) => c.tagName === name)
+const txt = (el, name) => { const k = el && kid(el, name); return k ? k.textContent.trim() : '' }
+
+const VERSE_NO = /^\(?\d+\.\)?[\s\u00a0\u202f]*/ // "2." or "(2.)" in front of the first syllable of a verse
+
+// Choir staves: two voices on one staff, or chords in one voice, become two parts (top note / bottom note).
+const VOCAL = /chor|choir|voice|vocal|stimme|satb|sopr|alto?\b|tenor|bass\b|bariton|männer|frauen|\bmen\b|women|ladies|^\s*[st]\s*[\/&+.,]?\s*[ab]\.?\s*$/i
+function pairNames(hint, low) {
+  const up = /sopr|alto?\b|women|frauen|ladies|^\s*s\s*[\/&+.,]?\s*a\.?\s*$/i.test(hint), dn = /tenor|bass\b|bariton|\bmen\b|männer|^\s*t\s*[\/&+.,]?\s*b\.?\s*$/i.test(hint)
+  return (dn && !up) || (low && !up) ? [T('Tenor'), T('Bass')] : [T('Soprano'), T('Alto')]
+}
+// used: the voices of one staff worth playing, in voice order: { n, multi, lyr, loc }.
+// extra: notes in the staff's small extra voices (where the parts divide for a while, as a second voice).
+function staffParts(parts, base, hint, low, used, extra = 0, alt = []) {
+  const instrument = /sax|trb|trombone|tuba|horn|trumpet|tpt|guitar|gtr|piano|pno|keys|organ|flute|oboe|clarinet|violin|viola|cello|bassoon|kontrabass|double bass|string|synth|harp|bells|e-bass|bass guitar/i.test(hint)
+  const vocal = (VOCAL.test(hint) && !instrument) || used.some((u) => u.lyr > 0)
+  const names = pairNames(hint, low)
+  const lab = (k) => (vocal ? names[k] : base + ' – ' + (k ? T('lower') : T('upper')))
+  const add = (u, name, pick, more) => parts.push(Object.assign({}, u.loc, { name, pick, lyrics: u.lyr, notes: u.n, base, vocal }, more))
+  // Divided somewhere in the song (not only at the start): a choir staff splits when an eighth of it has two parts.
+  const n0 = used.length ? used[0].n : 0, div = used.length === 1 ? used[0].multi + extra : 0, need = vocal ? Math.max(8, .12 * n0) : .25 * n0
+  if (used.length >= 2) used.forEach((u, k) => add(u, k < 2 ? lab(k) : base + ' – ' + T('voice') + ' ' + (k + 1)))
+  else if (used.length === 1 && div >= need) { add(used[0], lab(0), 'top'); add(used[0], lab(1), 'bottom', alt.length ? { alt } : null) }
+  else if (used.length === 1) add(used[0], base)
+}
+// A choir part for men (named by pairNames): written in a plain treble clef, it sounds an octave lower.
+const isMenPart = (name) => [T('Tenor'), T('Bass')].some((n) => name === n || name.startsWith(n + ' ('))
+function finishParts(parts) {
+  const seen = {}
+  for (const p of parts) seen[p.name] = (seen[p.name] || 0) + 1
+  for (const p of parts) if (seen[p.name] > 1 && p.name !== p.base) p.name += ' (' + p.base + ')'
+  for (const p of parts) p.id = p.key + '|' + (p.pick || '')
+  return parts
+}
+
+function readScore(doc, fileName) {
+  if (doc.getElementsByTagName('parsererror').length) throw new Error('This file is not valid MusicXML.')
+  const root = doc.documentElement
+  if (root.tagName === 'score-timewise') throw new Error('Timewise MusicXML is not supported. Please export "partwise" MusicXML.')
+  if (root.tagName !== 'score-partwise') throw new Error('This file is not MusicXML.')
+  const work = kid(root, 'work')
+  const title = (work && txt(work, 'work-title')) || txt(root, 'movement-title') || (fileName || 'My song').replace(/\.[^.]+$/, '')
+  const names = {}
+  const pl = kid(root, 'part-list')
+  if (pl) for (const sp of kids(pl, 'score-part')) names[sp.getAttribute('id')] = txt(sp, 'part-name') || sp.getAttribute('id')
+  const parts = []
+  for (const p of kids(root, 'part')) {
+    const pid = p.getAttribute('id'), pname = names[pid] || pid
+    const st = new Map(), clefLow = {}
+    let prev = null
+    for (const n of p.getElementsByTagName('note')) {
+      if (kid(n, 'grace') || kid(n, 'cue') || kid(n, 'rest') || !kid(n, 'pitch')) { if (!kid(n, 'chord')) prev = null; continue }
+      const staff = txt(n, 'staff') || '1', voice = txt(n, 'voice') || '1', key = staff + '|' + voice
+      let c = st.get(key)
+      if (!c) st.set(key, c = { staff, voice, n: 0, multi: 0, lyr: 0, counted: false })
+      if (kid(n, 'chord')) { if (prev === c && !c.counted) { c.multi++; c.counted = true } }
+      else { c.n++; c.counted = false; if (kids(n, 'lyric').length) c.lyr++ }
+      prev = c
+    }
+    for (const cl of p.getElementsByTagName('clef')) {
+      const sn = cl.getAttribute('number') || '1'
+      if (!(sn in clefLow)) clefLow[sn] = txt(cl, 'sign') === 'F' || txt(cl, 'clef-octave-change') === '-1'
+    }
+    const all = Array.from(st.values()), staves = Array.from(new Set(all.map((c) => c.staff))).sort((a, b) => a - b)
+    for (const sn of staves) {
+      const vs = all.filter((c) => c.staff === sn).sort((a, b) => (+a.voice || 0) - (+b.voice || 0))
+      const used = vs.filter((x, k) => x.n >= 4 && (k === 0 || (x.n >= 12 && x.n >= .25 * vs[0].n)))
+      const small = vs.filter((x) => !used.includes(x) && x.n >= 4)
+      const base = pname + (staves.length > 1 ? ' (' + T('staff') + ' ' + sn + ')' : '')
+      staffParts(parts, base, pname, !!clefLow[sn], used.map((u) => ({ n: u.n, multi: u.multi, lyr: u.lyr, loc: { key: pid + '|' + sn + '|' + u.voice, pid, staff: sn, voice: u.voice } })),
+        small.reduce((a, x) => a + x.n, 0), small.map((x) => x.voice))
+    }
+  }
+  finishParts(parts)
+  if (!parts.length) throw new Error(T('No notes found in this file.'))
+  return { title, parts, doc }
+}
+function defaultPart(score) {
+  const withLyrics = score.parts.filter((p) => p.lyrics > 0 && p.pick !== 'bottom')
+  return (withLyrics[0] || score.parts.slice().sort((a, b) => b.notes - a.notes)[0]).id
+}
+
+function songFromPart(score, partId) {
+  const info = score.parts.find((p) => p.id === partId) || score.parts[0]
+  const part = kids(score.doc.documentElement, 'part').find((p) => p.getAttribute('id') === info.pid)
+  const voice = info.voice, staff = info.staff, low = info.pick === 'bottom', alts = low ? info.alt || [] : []
+  const men = isMenPart(info.name)
+  let gClef = false // the staff's clef is a plain treble clef (no 8vb)
+
+  let divisions = 1, mStart = 0, bpm = 0, fifths = null
+  const ev = [], bars = [], keyChanges = [], dyns = []
+  for (const m of kids(part, 'measure')) {
+    bars.push(mStart)
+    let pos = 0, maxPos = 0, lastOnset = 0
+    for (const el of Array.from(m.children)) {
+      const tag = el.tagName
+      if (tag === 'attributes') {
+        const d = txt(el, 'divisions')
+        if (d) divisions = +d || 1
+        for (const cl of kids(el, 'clef')) if ((cl.getAttribute('number') || '1') === staff) gClef = txt(cl, 'sign') === 'G' && !txt(cl, 'clef-octave-change')
+        const k = kid(el, 'key')
+        if (k && txt(k, 'fifths') !== '') {
+          const f = +txt(k, 'fifths')
+          if (fifths !== null && f !== fifths) keyChanges.push(mStart + pos / divisions)
+          fifths = f
+        }
+      } else if (tag === 'backup') pos -= +txt(el, 'duration') || 0
+      else if (tag === 'forward') { pos += +txt(el, 'duration') || 0; maxPos = Math.max(maxPos, pos) }
+      else if (tag === 'sound') { if (!bpm && el.getAttribute('tempo')) bpm = +el.getAttribute('tempo') }
+      else if (tag === 'direction') {
+        const snd = kid(el, 'sound')
+        if (!bpm && snd && snd.getAttribute('tempo')) bpm = +snd.getAttribute('tempo')
+        if (!bpm) {
+          const mt = el.getElementsByTagName('metronome')[0]
+          if (mt && txt(mt, 'per-minute')) {
+            const unit = { whole: 4, half: 2, quarter: 1, eighth: .5, '16th': .25 }[txt(mt, 'beat-unit')] || 1
+            bpm = parseFloat(txt(mt, 'per-minute')) * unit * (kid(mt, 'beat-unit-dot') ? 1.5 : 1)
+          }
+        }
+        const st = txt(el, 'staff')
+        const dy = el.getElementsByTagName('dynamics')[0]
+        if (dy && dy.children[0] && (!st || st === staff)) dyns.push({ beat: mStart + pos / divisions, v: dy.children[0].tagName })
+      } else if (tag === 'note') {
+        if (kid(el, 'grace')) continue
+        const dur = +txt(el, 'duration') || 0
+        const isChord = !!kid(el, 'chord')
+        const start = isChord ? lastOnset : pos
+        if (!isChord) { lastOnset = pos; pos += dur; maxPos = Math.max(maxPos, pos) }
+        const vo = txt(el, 'voice') || '1', isAlt = vo !== voice && alts.includes(vo)
+        if (kid(el, 'cue') || kid(el, 'rest') || (vo !== voice && !isAlt) || (txt(el, 'staff') || '1') !== staff) continue
+        const p = kid(el, 'pitch')
+        if (!p) continue
+        const pc = pitchOf(txt(p, 'step'), parseFloat(txt(p, 'alter') || '0') || 0, +txt(p, 'octave') - (men && gClef ? 1 : 0))
+        const beat = mStart + start / divisions
+        const prev = ev[ev.length - 1]
+        if (isChord && prev && !!prev.alt === isAlt && Math.abs(prev.beat - beat) < 1e-6) { if (low ? pc.midi < prev.midi : pc.midi > prev.midi) Object.assign(prev, pc); continue }
+        const ties = kids(el, 'tie').map((t) => t.getAttribute('type'))
+        const not = kid(el, 'notations')
+        const arts = not && kid(not, 'articulations')
+        if (not) for (const t of kids(not, 'tied')) ties.push(t.getAttribute('type'))
+        const lyrics = {}
+        kids(el, 'lyric').forEach((l, k) => {
+          const v = parseInt(l.getAttribute('number') || '', 10) || k + 1, t = txt(l, 'text').replace(VERSE_NO, '')
+          if (t && !lyrics[v]) lyrics[v] = { text: t, syl: txt(l, 'syllabic') }
+        })
+        ev.push({ ...pc, beat, dur: dur / divisions, tieStart: ties.includes('start'), tieStop: ties.includes('stop'),
+          stacc: !!(arts && (kid(arts, 'staccato') || kid(arts, 'staccatissimo') || kid(arts, 'spiccato'))),
+          ferm: !!(not && kid(not, 'fermata')),
+          lyrics, alt: isAlt })
+      }
+    }
+    mStart += maxPos / divisions
+  }
+  return finishSong(score.title, info.name, bpm, withAlt(ev), bars, keyChanges, mStart, dyns)
+}
+// ev: the part's notes, those of a small extra voice marked .alt: where the extra voice sings, it wins.
+function withAlt(ev) {
+  const alt = ev.filter((e) => e.alt)
+  if (!alt.length) return ev
+  alt.sort((a, b) => a.beat - b.beat)
+  const inAlt = (b) => {
+    let lo = 0, hi = alt.length
+    while (lo < hi) { const m = (lo + hi) >> 1; if (alt[m].beat <= b + 1e-6) lo = m + 1; else hi = m }
+    const a = alt[lo - 1]
+    return !!a && b < a.beat + a.dur - 1e-6
+  }
+  return alt.concat(ev.filter((e) => !e.alt && !inAlt(e.beat)))
+}
+
+// Shared by MusicXML and .smc: tied notes become one note, overlaps are cut, dynamics and verses are attached.
+function finishSong(title, partName, bpm, ev, bars, keyChanges, total, dyns) {
+  ev.sort((a, b) => a.beat - b.beat)
+  const notes = []
+  for (const e of ev) {
+    const last = notes[notes.length - 1]
+    if (last && last.tieOpen && e.tieStop !== false && last.midi === e.midi && Math.abs(last.beat + last.dur - e.beat) < 1e-3) {
+      last.dur += e.dur; last.tieOpen = e.tieStart; continue
+    }
+    if (e.dur <= 0) continue
+    if (last && e.beat < last.beat + last.dur - 1e-6) {
+      if (e.beat <= last.beat + 1e-6) continue
+      last.dur = e.beat - last.beat
+    }
+    notes.push({ ...e, tieOpen: e.tieStart })
+  }
+  if (notes.length < 4) throw new Error(T('This part has (almost) no notes.'))
+  for (const n of notes) {
+    let d = null
+    for (const x of dyns) if (x.beat <= n.beat + 1e-6) d = x.v
+    n.dyn = d
+  }
+  const count = {}
+  for (const n of notes) for (const v in n.lyrics || {}) if (n.lyrics[v].text) count[v] = (count[v] || 0) + 1
+  const most = Math.max(0, ...Object.values(count))
+  for (const v in count) if (count[v] < Math.max(4, most * .15)) for (const n of notes) if (n.lyrics) delete n.lyrics[v]
+  const verses = Array.from(new Set(notes.flatMap((n) => Object.keys(n.lyrics || {}).map(Number)))).sort((a, b) => a - b)
+  return { title, partName, bpm: clamp(bpm || 100, 40, 220), notes, bars, keyChanges, total, verses, hasLyrics: verses.length > 0 }
+}
+
+// ---------- Sheetmusic Creator files (.smc): JSON with the app's own score model ----------
+const frac = (f) => (f ? 4 * f.n / f.d : 0) // whole notes -> quarter beats
+function readSmc(text, fileName) {
+  let d
+  try { d = JSON.parse(text) } catch (e) { throw new Error('This file is not a Sheetmusic Creator score.') }
+  if (!d || d.format !== 'sheetmusic-creator' || !d.score || !Array.isArray(d.score.flows) || !d.score.flows.length) throw new Error('This file is not a Sheetmusic Creator score.')
+  const sc = d.score, flow = sc.flows[0], parts = []
+  for (const pl of sc.players || []) for (const ins of pl.instruments || []) (ins.staves || []).forEach((st, si) => {
+    const c = flow.staves[st.id]
+    if (!c || st.clef === 'percussion') return
+    const real = (e) => e.notes.filter((n) => n.head !== 'slash').length
+    const all = c.voices.map((v, vi) => {
+      const ch = v.events.filter((e) => e.kind === 'chord' && real(e) > 0)
+      return { vi, n: ch.length, multi: ch.filter((e) => real(e) >= 2).length, lyr: v.events.filter((e) => e.lyrics && e.lyrics.length).length }
+    })
+    const used = all.filter((x) => x.n >= 4 && (x.vi === 0 || (x.n >= 12 && x.n >= .25 * all[0].n))) // skip tiny second voices
+    const small = all.filter((x) => !used.includes(x) && x.n >= 4)
+    const hint = ins.name || pl.name || ''
+    const base = (hint || T('Part')) + (ins.staves.length > 1 ? ' (' + T('staff') + ' ' + (si + 1) + ')' : '')
+    staffParts(parts, base, hint, ['bass', 'tenor', 'treble8vb'].includes(st.clef), used.map((u) => ({ n: u.n, multi: u.multi, lyr: u.lyr, loc: { key: st.id + '|' + u.vi, staffId: st.id, vi: u.vi } })),
+      small.reduce((a, x) => a + x.n, 0), small.map((x) => x.vi))
+  })
+  finishParts(parts)
+  if (!parts.length) throw new Error(T('No notes found in this file.'))
+  return { kind: 'smc', title: (sc.info && sc.info.title) || (fileName || 'My song').replace(/\.[^.]+$/, ''), parts, smc: sc }
+}
+function songFromSmc(score, partId) {
+  const flow = score.smc.flows[0], part = score.parts.find((p) => p.id === partId) || score.parts[0]
+  const voice = flow.staves[part.staffId].voices[part.vi], low = part.pick === 'bottom'
+  const men = isMenPart(part.name)
+  let staffClef = 'treble'
+  for (const pl of score.smc.players || []) for (const ins of pl.instruments || []) for (const st of ins.staves || []) if (st.id === part.staffId) staffClef = st.clef
+  const clefs = (flow.staves[part.staffId].clefChanges || []).map((c) => ({ at: frac(c.pos), clef: c.clef })).sort((a, b) => a.at - b.at)
+  const clefAt = (b) => { let c = staffClef; for (const x of clefs) if (x.at <= b + 1e-6) c = x.clef; return c }
+  const ev = [], stv = flow.staves[part.staffId].voices
+  const evs = voice.events.map((e) => [e, false]).concat(low ? (part.alt || []).flatMap((vi) => ((stv[vi] || {}).events || []).map((e) => [e, true])) : [])
+  for (const [e, isAlt] of evs) {
+    if (e.kind !== 'chord') continue
+    let top = null
+    for (const n of e.notes) {
+      if (n.head === 'slash') continue
+      const pc = pitchOf(LET[n.pitch.step], n.pitch.alter || 0, n.pitch.octave)
+      if (!top || (low ? pc.midi < top.midi : pc.midi > top.midi)) top = { ...pc, tie: !!n.tie }
+    }
+    if (!top) continue
+    if (men && clefAt(frac(e.pos)) === 'treble') { top.midi -= 12; top.dia -= 7 }
+    const arts = e.articulations || [], lyrics = {}
+    for (const l of e.lyrics || []) if (l.text && !lyrics[l.verse || 1]) lyrics[l.verse || 1] = { text: l.text.replace(VERSE_NO, ''), syl: l.syllabic }
+    ev.push({ midi: top.midi, dia: top.dia, beat: frac(e.pos), dur: frac(e.dur), tieStart: top.tie,
+      stacc: arts.includes('staccato') || arts.includes('staccatissimo'), ferm: arts.includes('fermata'), lyrics, alt: isAlt })
+  }
+  const total = frac(flow.length), bars = []
+  let pos = 0
+  if (flow.pickup && frac(flow.pickup) > 0) { bars.push(0); pos = frac(flow.pickup) }
+  const tss = (flow.timeSignatures || []).slice().sort((a, b) => frac(a.pos) - frac(b.pos))
+  while (pos < total - 1e-6 && bars.length < 5000) {
+    bars.push(pos)
+    let t = null
+    for (const x of tss) if (frac(x.pos) <= pos + 1e-6) t = x
+    pos += t ? 4 * t.numerator / t.denominator : 4
+  }
+  const keys = flow.keySignatures || [], keyChanges = []
+  for (let k = 1; k < keys.length; k++) if (keys[k].fifths !== keys[k - 1].fifths) keyChanges.push(frac(keys[k].pos))
+  const dyns = (flow.staves[part.staffId].items || []).filter((it) => it.kind === 'dynamic').map((it) => ({ beat: frac(it.pos), v: it.text }))
+    .sort((a, b) => a.beat - b.beat)
+  const bpm = flow.tempos && flow.tempos.length ? flow.tempos.slice().sort((a, b) => frac(a.pos) - frac(b.pos))[0].bpm : 100
+  return finishSong(score.title, part.name, bpm, withAlt(ev), bars, keyChanges, total, dyns)
+}
+// Any supported song file (already unzipped): .smc or MusicXML.
+function parseSongText(text, fileName) {
+  if (/^\s*\{/.test(text)) return readSmc(text, fileName)
+  return { kind: 'xml', ...readScore(new DOMParser().parseFromString(text, 'application/xml'), fileName) }
+}
+function rawSong(score, partId) { return score.kind === 'smc' ? songFromSmc(score, partId) : songFromPart(score, partId) }
+// kind: 'high' / 'low' (choir parts), 'solo' (the only sung part) or 'inst' (an instrument); it picks the boss.
+function songFromScore(score, partId) {
+  const song = songFromScore0(score, partId)
+  const info = score.parts.find((p) => p.id === partId) || score.parts[0]
+  const sung = score.parts.filter((p) => p.vocal || p.lyrics > 0)
+  const mids = song.notes.map((n) => n.midi).sort((a, b) => a - b)
+  song.kind = !(info.vocal || info.lyrics > 0) ? 'inst' : sung.length <= 1 ? 'solo' : isMenPart(info.name) || mids[mids.length >> 1] < 55 ? 'low' : 'high'
+  return song
+}
+function songFromScore0(score, partId) {
+  const song = rawSong(score, partId)
+  const info = score.parts.find((p) => p.id === partId) || score.parts[0]
+  if (!info.vocal && !(info.lyrics > 0)) { // an instrument: no text
+    for (const n of song.notes) n.lyrics = {}
+    song.verses = []; song.hasLyrics = false
+    return song
+  }
+  const has = (n) => !!n.lyrics && Object.keys(n.lyrics).length > 0
+  if (song.notes.filter(has).length >= .3 * song.notes.length) return song
+  const donor = score.parts.filter((p) => p.id !== partId && p.lyrics > 0 && p.vocal !== false).sort((a, b) => b.lyrics - a.lyrics)[0]
+  if (!donor) return song
+  let d
+  try { d = rawSong(score, donor.id) } catch (e) { return song }
+  const at = new Map()
+  for (const n of d.notes) if (has(n)) at.set(Math.round(n.beat * 96), n.lyrics)
+  let got = 0
+  for (const n of song.notes) if (!has(n)) { const l = at.get(Math.round(n.beat * 96)); if (l) { n.lyrics = l; got++ } }
+  if (!got) return song
+  song.verses = Array.from(new Set(song.notes.flatMap((n) => Object.keys(n.lyrics || {}).map(Number)))).sort((a, b) => a - b)
+  song.hasLyrics = song.verses.length > 0
+  song.lyricsFrom = donor.name
+  return song
+}
+
+// .mxl = zip. Small reader: central directory + DecompressionStream for deflate.
+async function unzipMusicXML(buf) {
+  const u8 = new Uint8Array(buf), dv = new DataView(buf), dec = new TextDecoder()
+  let eocd = -1
+  for (let i = u8.length - 22; i >= Math.max(0, u8.length - 65557); i--) if (dv.getUint32(i, true) === 0x06054b50) { eocd = i; break }
+  if (eocd < 0) throw new Error('Could not read this .mxl file.')
+  const count = dv.getUint16(eocd + 10, true)
+  let off = dv.getUint32(eocd + 16, true)
+  const files = {}
+  for (let i = 0; i < count && dv.getUint32(off, true) === 0x02014b50; i++) {
+    const nlen = dv.getUint16(off + 28, true), elen = dv.getUint16(off + 30, true), clen = dv.getUint16(off + 32, true)
+    files[dec.decode(u8.subarray(off + 46, off + 46 + nlen))] =
+      { method: dv.getUint16(off + 10, true), size: dv.getUint32(off + 20, true), at: dv.getUint32(off + 42, true) }
+    off += 46 + nlen + elen + clen
+  }
+  async function read(name) {
+    const f = files[name]
+    if (!f) return null
+    const start = f.at + 30 + dv.getUint16(f.at + 26, true) + dv.getUint16(f.at + 28, true)
+    const data = u8.slice(start, start + f.size)
+    if (f.method === 0) return dec.decode(data)
+    if (f.method !== 8) throw new Error('Unsupported compression in this .mxl file.')
+    if (typeof DecompressionStream === 'undefined') throw new Error('This browser cannot open .mxl. Please export uncompressed MusicXML (.musicxml).')
+    return await new Response(new Blob([data]).stream().pipeThrough(new DecompressionStream('deflate-raw'))).text()
+  }
+  const container = await read('META-INF/container.xml')
+  let rootName = container && (/full-path="([^"]+)"/.exec(container) || [])[1]
+  if (!rootName || !files[rootName]) rootName = Object.keys(files).find((n) => !n.startsWith('META-INF') && /\.(xml|musicxml)$/i.test(n))
+  if (!rootName) throw new Error('No score found inside this .mxl file.')
+  return await read(rootName)
+}
+
+// ---------- Level generator ----------
+const clamp = (v, a, b) => Math.max(a, Math.min(b, v))
+const PH = { G: 110, V0: Math.sqrt(2 * 110 * 4.6), HALF: .3, STAND: 1.7, DUCK: .8, STEP: .55 }
+PH.CUT = PH.V0 * .45
+PH.DJ = PH.V0 * .85
+const DIFFS = {
+  easy: { label: 'Easy', speed: 4.6, target: 1, lives: 5, power: 3 },
+  normal: { label: 'Normal', speed: 5.4, target: 2, lives: 3, power: 4 },
+  hard: { label: 'Hard', speed: 6.3, target: 4, lives: 3, power: 5, dense: true },
+}
+const POWERS = { dot: { bars: 8, w: 30 }, slur: { bars: 8, w: 20 }, rit: { bars: 4, w: 18 }, accel: { bars: 4, w: 14 }, ferm: { bars: 0, w: 18 } }
+
+function airTime(rise, v) { const d = v * v - 2 * PH.G * rise; return d < 0 ? -1 : (v + Math.sqrt(d)) / PH.G }
+function rng(seed) {
+  let h = 2166136261
+  for (let i = 0; i < seed.length; i++) { h ^= seed.charCodeAt(i); h = Math.imul(h, 16777619) }
+  return () => { h = (h + 0x6D2B79F5) | 0; let t = h; t = Math.imul(t ^ (t >>> 15), t | 1); t ^= t + Math.imul(t ^ (t >>> 7), t | 61); return ((t ^ (t >>> 14)) >>> 0) / 4294967296 }
+}
+// Can the player walk from A onto B without jumping?
+function walkable(A, B, speed) {
+  const rise = B.top - A.top, gap = B.x0 - A.x1
+  if (rise > .05) return rise <= PH.STEP && gap <= 2 * PH.HALF - .15 // a second up: the quaver steps up by itself
+  const fall = rise < 0 ? speed * Math.sqrt(2 * -rise / PH.G) * .85 : 0
+  return gap - 2 * PH.HALF + .1 <= fall
+}
+// Can the player jump from A onto B? tMax limits where the take-off can be (crumbling platforms).
+function canReach(A, B, speed, tMax) {
+  const rise = B.top - A.top
+  if (rise > (B.x1 - B.x0 < 1 ? 2.6 : 3.4)) return false // high jumps onto narrow notes get a spring instead
+  const t0 = A.x0, t1 = Math.min(tMax == null ? Infinity : tMax, A.x1 + PH.HALF - .05)
+  const l0 = B.x0 - PH.HALF + .12, l1 = B.x1 + PH.HALF - .12
+  if (l1 < l0 || t1 < t0) return false
+  const tHi = airTime(rise, PH.V0 * .95)
+  if (tHi < 0) return false
+  const dHi = speed * tHi * .88
+  const dLo = rise <= 0 ? speed * Math.sqrt(2 * -rise / PH.G) : speed * airTime(rise, Math.max(PH.CUT, Math.sqrt(2 * PH.G * rise) * 1.03))
+  // Where you can take off and still land on B; a bigger step up needs a fair moment for it (a person, not a bot).
+  const a = Math.max(t0, l0 - dHi), b = Math.min(t1, l1 - dLo)
+  if (b < a) return false
+  return rise <= 1 || b - a >= speed * .2
+}
+
+// Long rests (intros, interludes) are shortened to 2 beats, so the level has no deserts of rest stones.
+function warpOf(song) {
+  const cuts = []
+  let end = null
+  for (const n of song.notes) {
+    const from = end == null ? 0 : end + 2
+    if (n.beat > from + 1e-6) cuts.push({ at: from, len: n.beat - from })
+    end = Math.max(end == null ? -1e9 : end, n.beat + n.dur)
+  }
+  return (b) => { let w = b; for (const c of cuts) { if (b >= c.at + c.len) w -= c.len; else if (b > c.at) w -= b - c.at } return w }
+}
+
+function buildLevel(song, diffKey, opts = {}) {
+  const verses = song.verses || [], verse = opts.verse && verses.includes(opts.verse) ? opts.verse : verses[0] || 1
+  const D = DIFFS[diffKey], speed = D.speed * (1 + .08 * Math.max(0, verses.indexOf(verse))) * (opts.speedMul || 1), bps = song.bpm / 60, ppb = speed / bps
+  const R = rng(song.title + '|' + (song.partName || '') + '|' + song.notes.length + '|' + diffKey + '|' + verse)
+  const dias = song.notes.map((n) => n.dia).sort((a, b) => a - b)
+  const ref = dias[dias.length >> 1] < 27 ? 18 : 30 // bass staff (G2 bottom line) or treble staff (E4 bottom line)
+  const yOf = (dia) => (dia - ref) * .5
+
+  const warp = song.warp || (song.warp = warpOf(song))
+  let plats = song.notes.map((n, i) => {
+    const w = n.dur * ppb, gap = Math.min(.35, w * .3), y = yOf(n.dia)
+    return { kind: 'note', ni: i, x0: warp(n.beat) * ppb, x1: warp(n.beat) * ppb + w - gap, y, top: y + .42, crumble: false }
+  })
+  const first = plats[0], last = plats[plats.length - 1]
+  const startPlat = { kind: 'start', x0: first.x0 - 9, x1: first.x0 - .35, y: first.y, top: first.top }
+  const endX0 = Math.max(Math.min(warp(song.total), warp(song.notes[song.notes.length - 1].beat) + song.notes[song.notes.length - 1].dur + 2) * ppb, last.x1 + .35)
+  const endPlat = { kind: 'end', x0: endX0, x1: endX0 + 20, y: last.y, top: last.top }
+  plats = [startPlat, ...plats, endPlat]
+
+  // 1) Make every transition possible: rest stones over long gaps, accent springs for leaps that are too high.
+  const out = [plats[0]], springs = [], actions = []
+  const hop = speed * airTime(0, PH.V0) * .42
+  for (let i = 1; i < plats.length; i++) {
+    const A = out[out.length - 1], B = plats[i]
+    if (!walkable(A, B, speed)) {
+      if (!canReach(A, B, speed)) {
+        const rise = B.top - A.top, span = B.x0 - A.x1
+        if (span < 2.6 && rise > 0) {
+          const v = Math.sqrt(2 * PH.G * (rise + 1.2)), dist = speed * airTime(rise, v)
+          // The spring fires as soon as you stand on it (short platforms: anywhere on them).
+          const tx = Math.min(B.x0 + .9, (B.x0 + B.x1) / 2) // where the boost aims (see aimSpring)
+          const x = A.x1 - A.x0 < .9 ? A.x0 : clamp(tx - dist + .3, A.x0 + .3, A.x1 - .05)
+          springs.push({ x, plat: A, top: A.top, v, landX: B.x0 })
+        } else {
+          const w = 1.5
+          let n = Math.max(1, Math.ceil((span - hop) / (hop + w)), Math.ceil(Math.abs(rise) / 1.8) - 1)
+          while (n > 1 && span - n * w < (n + 1) * .5) n--
+          const ww = Math.min(w, (span - (n + 1) * .5) / n)
+          const g = (span - n * ww) / (n + 1)
+          let prevTop = A.top, st = null
+          for (let k = 1; k <= n; k++) {
+            const x0 = A.x1 + g * k + ww * (k - 1)
+            let top = A.top + (B.top - A.top) * k / (n + 1) + (R() - .5) * .6
+            top = clamp(top, prevTop - 2.5, prevTop + 1.8)
+            st = { kind: 'stone', x0, x1: x0 + ww, top, y: top - .42 }
+            out.push(st); actions.push(x0); prevTop = top
+          }
+          // Still too high from the last stone (no room for more stones): that stone gets an aiming spring.
+          if (st && !canReach(st, B, speed)) {
+            const v = Math.sqrt(2 * PH.G * (Math.max(0, B.top - st.top) + 1.2))
+            springs.push({ x: st.x0, plat: st, top: st.top, v, landX: B.x0 })
+          }
+        }
+      }
+      actions.push(B.x0)
+    }
+    out.push(B)
+  }
+  plats = out
+
+  // 2) Staccato notes crumble shortly after landing, if the next platform can still be reached in time.
+  for (let i = 1; i < plats.length - 1; i++) {
+    const p = plats[i]
+    if (p.kind !== 'note' || !song.notes[p.ni].stacc) continue
+    if (canReach(p, plats[i + 1], speed, p.x0 + speed * .4)) {
+      p.crumble = true
+      if (p.x1 - p.x0 > speed * .45) actions.push(p.x1)
+    }
+  }
+
+  // 3) Challenge budget: every window of 2 bars should need a few actions; obstacles fill the calm stretches.
+  const strips = []
+  for (let i = 1; i < plats.length - 1; i++) {
+    const p = plats[i]
+    if (p.kind !== 'note') continue
+    const s = strips[strips.length - 1]
+    if (s && s.end === i - 1 && Math.abs(plats[i - 1].top - p.top) < 1e-6 && walkable(plats[i - 1], p, speed)) { s.x1 = p.x1; s.end = i; s.ids.push(i) }
+    else strips.push({ x0: p.x0, x1: p.x1, top: p.top, end: i, ids: [i] })
+  }
+  const used = []
+  // Keep obstacles away from each other and from a spring's flight and landing zone.
+  const isFree = (a, b) => !used.some((u) => u[0] < b && a < u[1]) && !springs.some((s) => s.x - 1 < b && a < s.landX + 3)
+  const runway = Math.max(1.45, speed * (D.dense ? .3 : .4)) // time to react after landing on a strip
+  const gapR = D.dense ? Math.max(1.9, speed * .37) : Math.max(2.2, speed * .45) // room around each obstacle
+  const obstacles = [], powerups = [], cracks = []
+  const barX = Array.from(new Set(song.bars.map((b) => Math.round(warp(b) * ppb * 1000) / 1000)))
+  const windows = []
+  for (let k = 0; k < barX.length; k += 2) windows.push([barX[k], k + 2 < barX.length ? barX[k + 2] : endX0])
+  if (!windows.length) for (let x = 0; x < endX0; x += 8 * ppb) windows.push([x, x + 8 * ppb])
+  windows.forEach(([w0, w1], wi) => {
+    if (wi === 0 && windows.length > 3) return // a calm first bar to get going
+    const dyn = (song.notes.find((n) => warp(n.beat) * ppb >= w0) || {}).dyn || ''
+    const adj = /^f/.test(dyn) ? 1 : /^p/.test(dyn) ? -1 : 0
+    let need = (opts.boss ? (diffKey === 'hard' ? 1 : 0) : D.target + (opts.targetAdd || 0) + adj) - actions.filter((x) => x >= w0 && x < w1).length * (D.dense ? .5 : 1)
+    for (let tries = 0; need > 0 && tries < 24; tries++) {
+      const cands = strips.filter((s) => Math.min(s.x1, w1) - Math.max(s.x0, w0) > .3 && s.x1 - s.x0 > (D.dense ? 2.6 : 2.9))
+      if (!cands.length) break
+      const s = cands[Math.floor(R() * cands.length)]
+      const lo = Math.max(s.x0 + runway, w0), hi = Math.min(s.x1 - runway, w1)
+      if (hi < lo) continue
+      const xm = lo + R() * (hi - lo)
+      if (!isFree(xm - gapR, xm + gapR)) continue
+      const len = s.x1 - s.x0
+      const types = ['spike', 'crack']
+      if (len > 3.6 && xm - s.x0 >= runway + 1) types.push('bird', 'bird') // birds need more time to see them coming
+      if (len > 4.4) types.push('crawler', 'crawler')
+      const type = types[Math.floor(R() * types.length)]
+      if (type === 'crack') {
+        const pi = s.ids.find((i) => plats[i].x0 + 1.3 <= xm && xm <= plats[i].x1 - 1.3)
+        if (pi == null || cracks.some((c) => c.plat === plats[pi])) continue
+        cracks.push({ plat: plats[pi], x: xm })
+      } else if (type === 'spike') {
+        if (!s.ids.some((i) => plats[i].x0 + .35 <= xm && xm <= plats[i].x1 - .35)) continue
+        obstacles.push({ type, x: xm, top: s.top })
+      } else if (type === 'bird') obstacles.push({ type, x: xm, top: s.top, k: .7 })
+      else obstacles.push({ type, x: xm, top: s.top, k: .4, s0: s.x0 + .45, s1: s.x1 - .45 })
+      used.push([xm - gapR, xm + gapR]); need--
+    }
+  })
+  // Apply cracks: split the note platform; the second half is silent.
+  for (const c of cracks) {
+    const i = plats.indexOf(c.plat)
+    const a = { ...c.plat, x1: c.x - .45 }, b = { ...c.plat, kind: 'half', x0: c.x + .45, crumble: false }
+    plats.splice(i, 1, a, b)
+    for (const s of springs) if (s.plat === c.plat) s.plat = s.x < c.x ? a : b
+  }
+
+  // 4) Power-ups: bubbles above calm stretches (and a shield above every fermata).
+  const totalW = Object.values(POWERS).reduce((s, p) => s + p.w, 0)
+  const pick = () => { let r = R() * totalW; for (const [k, p] of Object.entries(POWERS)) { r -= p.w; if (r <= 0) return k } return 'dot' }
+  const every = Math.max(2, 10 - D.power) // windows between power-ups
+  windows.forEach(([w0, w1], wi) => {
+    if (wi % every !== every - 1) return
+    const near = strips.filter((s) => s.x1 > w0 - 8 && s.x0 < w1 + 8 && s.x1 - s.x0 >= 1.2)
+    for (let tries = 0; near.length && tries < 12; tries++) {
+      const s = near[Math.floor(R() * near.length)]
+      const xm = s.x0 + .6 + R() * (s.x1 - s.x0 - 1.2)
+      if (!isFree(xm - 1.2, xm + 1.2)) continue
+      powerups.push({ type: pick(), x: xm, y: s.top + 2.1 }); used.push([xm - 1.2, xm + 1.2]); break
+    }
+  })
+  plats.forEach((p) => {
+    if (p.kind === 'note' && song.notes[p.ni].ferm && isFree(p.x0, p.x0 + 1.2)) powerups.push({ type: 'ferm', x: p.x0 + .6, y: p.top + 2.1 })
+  })
+
+  // 5) Collectibles: the lyrics above their notes, and coins on top of jump arcs.
+  const items = []
+  plats.forEach((p) => {
+    if (p.kind !== 'note') return
+    const n = song.notes[p.ni]
+    const ly = n.lyrics && n.lyrics[verse]
+    if (ly) items.push({ x: p.x0 + .55, y: p.top + 1.0, text: ly.text + (ly.syl === 'begin' || ly.syl === 'middle' ? '-' : '') })
+  })
+  for (let i = 1; i < plats.length; i++) {
+    const A = plats[i - 1], B = plats[i]
+    if (walkable(A, B, speed) || A.kind === 'start' || springs.some((s) => s.plat === A)) continue
+    const x = (A.x1 + B.x0) / 2
+    if (!used.some((u) => u[0] < x + .5 && x - .5 < u[1])) items.push({ x, y: Math.max(A.top, B.top) + 1.5, coin: true })
+  }
+  items.sort((a, b) => a.x - b.x)
+  obstacles.sort((a, b) => a.x - b.x)
+  // A boss fight: a heart waits on the start, right after the introduction (+1 life; you just walk into it).
+  if (opts.boss) powerups.push({ type: 'heart', x: first.x0 - 7 + 3.2, y: startPlat.top + 1 })
+  powerups.sort((a, b) => a.x - b.x)
+
+  const themes = [{ x: -1e9, i: 0 }]
+  song.keyChanges.forEach((b, k) => themes.push({ x: warp(b) * ppb, i: (k + 1) % 4 }))
+  const tops = plats.map((p) => p.top)
+  const hasLyrics = items.some((it) => !it.coin)
+  const lyricIdx = []
+  items.forEach((it, i) => { if (!it.coin) lyricIdx.push(i) })
+  return {
+    hasLyrics, lyricIdx, song, diff: diffKey, verse, speed, bps, ppb, ref, lives: D.lives, boss: opts.boss || null,
+    plats, springs: springs.map((s) => ({ x: s.x, top: s.top, v: s.v, pi: plats.indexOf(s.plat), ti: plats.findIndex((p) => p.x0 === s.landX) })),
+    obstacles, powerups, items, themes,
+    bars: barX, startX: first.x0 - 7, winX: endX0 + 3, endX: endX0, minTop: Math.min(...tops), maxTop: Math.max(...tops),
+    noteCount: song.notes.length,
+    barSec: (song.bars.length > 2 ? song.bars[2] - song.bars[1] : song.bars.length === 2 ? song.total - song.bars[1] : 4) / bps,
+  }
+}
+
+// ---------- Simulation ----------
+function firstAfter(L, a) { // first platform with x1 > a (platforms do not overlap, so x0 and x1 are both sorted)
+  let lo = 0, hi = L.plats.length
+  while (lo < hi) { const m = (lo + hi) >> 1; if (L.plats[m].x1 <= a) lo = m + 1; else hi = m }
+  return lo
+}
+function obsX(o, px) {
+  if (o.type === 'spike') return o.x
+  const x = o.x - o.k * (px - o.x)
+  return o.type === 'crawler' ? clamp(x, o.s0, o.s1) : x
+}
+function firstX(arr, x) { // first element with .x >= x (arr sorted by x)
+  let lo = 0, hi = arr.length
+  while (lo < hi) { const m = (lo + hi) >> 1; if (arr[m].x < x) lo = m + 1; else hi = m }
+  return lo
+}
+function newRun(L, carry) {
+  const r = newRun0(L)
+  if (carry) for (const k of ['score', 'lives', 'streak', 'bestStreak', 'shield', 'stomps', 'damage', 'lead']) r[k] = carry[k]
+  return r
+}
+function newRun0(L) {
+  return { pre: {}, preWait: {}, lead: 0, tempo: 1, tempoBase: 1, swing: 1, tempoT: 0, shots: [], boss: L.boss ? newBoss(L) : null, px: L.startX, y: L.plats[0].top, vy: 0, ground: true, cur: 0, prevJump: false, buffer: 0, coyote: 0, djUsed: false, duck: false,
+    lives: L.lives, invuln: 0, shield: false, power: null, powerT: 0, t: 0, score: 0, streak: 0, bestStreak: 0, hits: 0, missed: 0,
+    items: 0, stomps: 0, damage: 0, hit: new Array(L.plats.length).fill(0), missScan: 0, crumbleAt: {}, gone: {}, taken: {}, dead: {},
+    powTaken: {}, done: false, win: false, events: [], squash: 0, hold: 0, lastGroundX: L.startX, lastFallX: -1e9 }
+}
+const ev = (r, type, data) => r.events.push(Object.assign({ type }, data))
+function breakStreak(r) { if (r.streak >= 8) ev(r, 'streakLost', { n: r.streak }); r.streak = 0 }
+function doJump(r, v) { r.vy = v; r.ground = false; r.coyote = 0; r.buffer = 0; ev(r, 'jump') }
+// Stomped: coming down onto it, from above its top last frame or in its upper 60 %.
+const stomps = (r, b0, b1) => (r.vy < 0 || r.y < r.y0 - 1e-6) && (r.y0 >= b1 - .12 || r.y > b0 + (b1 - b0) * .4)
+function stomped(r, bounce) { r.vy = bounce; r.grace = .2; r.stomps++; r.airJump = true } // and one jump in the air, to save yourself
+function hurt(L, r) {
+  if (r.invuln > 0 || r.grace > 0) return
+  if (r.shield) { r.shield = false; r.invuln = 1.2; ev(r, 'shield'); return }
+  r.lives--; r.damage++; breakStreak(r); r.invuln = 1.5; ev(r, 'hurt')
+  if (r.lives <= 0) { r.done = true; ev(r, 'over') }
+}
+function rewind(L, r) {
+  let cp = L.startX
+  const back = Math.min(r.px, r.lastGroundX) - Math.max(4.5, L.speed * 2.2) // about 2 seconds before the gap
+  for (const b of L.bars) if (b <= back && b >= L.startX) cp = b
+  let i = firstAfter(L, cp + .4)
+  while (i < L.plats.length - 1 && L.plats[i].x1 - Math.max(cp, L.plats[i].x0) < .7) i++
+  const p = L.plats[i]
+  r.px = Math.max(cp, p.x0) + .3; r.y = p.top; r.vy = 0; r.ground = true; r.cur = -1; r.invuln = 1.5; r.djUsed = false
+  r.hold = 1.4; r.lastGroundX = r.px; r.buffer = 0
+  for (let k = firstAfter(L, r.px - 1); k < L.plats.length; k++) {
+    if (r.hit[k] === 2) { r.hit[k] = 0; r.missed-- }
+    delete r.crumbleAt[k]; delete r.gone[k]; delete r.pre[k]
+  }
+  r.missScan = firstAfter(L, r.px - 1)
+  for (const k in r.preWait) ev(r, 'preCancel', { i: +k })
+  r.preWait = {}
+  if (r.boss) bossReset(L, r)
+  ev(r, 'rewind')
+}
+function fall(L, r) {
+  const again = Math.abs(r.lastGroundX - r.lastFallX) < 4
+  r.lastFallX = r.lastGroundX
+  if (r.shield) { r.shield = false; ev(r, 'shield') }
+  else { r.lives--; r.damage++; breakStreak(r); ev(r, 'hurt') }
+  if (r.lives <= 0) { r.done = true; ev(r, 'over'); return }
+  rewind(L, r)
+  if (again && !r.shield) { r.shield = true; ev(r, 'gift') } // second fall at the same spot: a shield as a helping hand
+}
+function touch(L, r, i) {
+  const p = L.plats[i]
+  if (p.kind === 'note') {
+    const n = L.song.notes[p.ni]
+    if (!r.pre[i]) ev(r, 'note', { midi: n.midi, dur: n.dur / L.bps, i })
+    if (!r.hit[i]) {
+      r.hit[i] = 1; r.hits++; r.streak++; r.bestStreak = Math.max(r.bestStreak, r.streak)
+      const mult = 1 + Math.floor(r.streak / 8), pts = 10 * mult * (r.power === 'accel' ? 2 : 1)
+      r.score += pts
+      ev(r, 'pop', { x: p.x0 + .6, y: p.top + .7, pts, mult })
+      if (r.streak % 8 === 0) ev(r, 'streak', { n: r.streak, mult })
+    }
+  }
+}
+// The note you are about to land on (or walk onto), a moment early: the sound then comes out exactly on time
+// despite the audio output latency. r.lead = seconds ahead (0 = off).
+const timeF = (r) => (r.power === 'rit' ? .65 : r.power === 'accel' ? 1.25 : 1) * (r.tempo || 1)
+function predictNote(L, r) {
+  if (!(r.lead > 0)) return
+  const f = timeF(r)
+  let best = -1, bt = Infinity
+  for (let i = firstAfter(L, r.px - PH.HALF); i < L.plats.length && L.plats[i].x0 < r.px + L.speed * f * r.lead + PH.HALF; i++) {
+    const p = L.plats[i]
+    if (r.gone[i] || i === r.cur) continue
+    let tau
+    if (r.ground) {
+      // Walking on: a note at the same height is reached at its start; a second up is stepped onto half a body earlier.
+      if (p.kind !== 'note') continue
+      const d = p.top - r.y
+      if (Math.abs(d) < 1e-6) tau = (p.x0 - r.px) / L.speed
+      else if (d > 0 && d <= PH.STEP + 1e-6) tau = (p.x0 - PH.HALF - r.px) / L.speed
+      else continue
+      if (tau <= 0) continue
+    } else {
+      const disc = r.vy * r.vy + 2 * PH.G * (r.y - p.top)
+      if (disc < 0) continue
+      tau = (r.vy + Math.sqrt(disc)) / PH.G
+      const xl = r.px + L.speed * tau
+      if (tau < 0 || xl <= p.x0 - PH.HALF || xl >= p.x1 + PH.HALF) continue
+    }
+    if (tau / f < bt) { bt = tau / f; best = i }
+  }
+  // Scheduled, but you will not land there after all (you jumped away just before): take the sound back.
+  for (const k in r.preWait) {
+    if (r.cur === +k) { delete r.preWait[k]; continue }
+    if (+k !== best || r.t > r.preWait[k] + .12) { delete r.preWait[k]; delete r.pre[k]; ev(r, 'preCancel', { i: +k }) }
+  }
+  if (best >= 0 && bt <= r.lead && L.plats[best].kind === 'note' && !r.pre[best] && !blocked(L, r, r.px + L.speed * bt * f)) {
+    const n = L.song.notes[L.plats[best].ni]
+    r.pre[best] = true; r.preWait[best] = r.t + bt * f
+    ev(r, 'preNote', { i: best, midi: n.midi, dur: n.dur / L.bps, inSec: bt })
+  }
+}
+
+// Something to stomp near where you would land: then the note sounds only when you really land.
+function blocked(L, r, x) {
+  for (let i = firstX(L.obstacles, x - 6); i < L.obstacles.length && L.obstacles[i].x < x + 6; i++) if (!r.dead[i] && Math.abs(obsX(L.obstacles[i], x) - x) < 1.4) return true
+  if (r.shots) for (const s of r.shots) if (!s.dead && Math.abs(s.x - x) < 1.6) return true
+  const b = r.boss
+  return !!b && (b.phase === 'tired' || b.phase === 'land') && Math.abs(b.xc - x) < 1.6
+}
+// A jump on a boost's note: straight onto its target note if that works from here (not too high an arc);
+// otherwise a hop onto the boost itself, which then fires.
+function boostJump(L, r, s) {
+  const p = L.plats[s.ti]
+  if (p && s.ti > s.pi && p.x1 - p.x0 >= 1.2) { // a narrow note is hit from the boost itself (from close by)
+    const rise = p.top - r.y + .25, tx = Math.min(p.x0 + .9, (p.x0 + p.x1) / 2), need = (tx - r.px) / L.speed
+    let lo = rise > 0 ? Math.sqrt(2 * PH.G * rise) * 1.02 : 4, hi = Math.sqrt(2 * PH.G * (Math.max(0, rise) + 5))
+    if (need > 0 && airTime(rise, lo) <= need && airTime(rise, hi) >= need) {
+      for (let it = 0; it < 30; it++) { const m = (lo + hi) / 2; if (airTime(rise, m) < need) lo = m; else hi = m }
+      return hi
+    }
+  }
+  const need = (s.x - r.px) / L.speed
+  return need > .1 ? Math.min(PH.V0, need * PH.G / 2) : aimSpring(L, r, s)
+}
+// A spring bounces you exactly onto the next note you can reach (wide notes first, then any).
+function aimSpring(L, r, s) {
+  const ks = []
+  if (s.ti > s.pi) ks.push(s.ti)
+  for (const minW of [.6, 0]) for (let k = s.pi + 1; k < Math.min(L.plats.length, s.pi + 7); k++) if (L.plats[k].x1 - L.plats[k].x0 >= minW) ks.push(k)
+  {
+    for (const k of ks) {
+      const p = L.plats[k]
+      // A little higher than needed (lands with room to spare), but not past a narrow note.
+      const rise = p.top - r.y + (p.x1 - p.x0 >= 1.2 ? .25 : 0), tx = Math.min(p.x0 + .9, (p.x0 + p.x1) / 2), need = (tx - r.px) / L.speed
+      if (need <= 0) continue
+      let lo = rise > 0 ? Math.sqrt(2 * PH.G * rise) * 1.02 : 4, hi = 60
+      if (airTime(rise, lo) > need || airTime(rise, hi) < need) continue
+      for (let it = 0; it < 30; it++) { const m = (lo + hi) / 2; if (airTime(rise, m) < need) lo = m; else hi = m }
+      return hi
+    }
+  }
+  return s.v
+}
+
+function step(L, r, dt, inp) {
+  if (r.done) return
+  if (r.hold > 0) { r.hold -= dt; r.prevJump = !!inp.jump; r.duck = !!inp.duck; return } // "Get ready" after a fall
+  if (r.boss && r.boss.phase === 'enter') { // the boss introduces himself; everything else waits (a tap goes on)
+    if (inp.jump && !r.prevJump && r.boss.t > .8) r.boss.t = Math.max(r.boss.t, 2.8)
+    r.prevJump = !!inp.jump; r.duck = !!inp.duck; bossStep(L, r, dt); return
+  }
+  dt *= timeF(r)
+  r.t += dt; r.px += L.speed * dt
+  r.invuln = Math.max(0, r.invuln - dt); r.grace = Math.max(0, (r.grace || 0) - dt); r.squash = Math.max(0, r.squash - dt)
+  if (r.power) { r.powerT -= dt; if (r.powerT <= 0) r.power = null }
+  const pressed = inp.jump && !r.prevJump, released = !inp.jump && r.prevJump
+  r.prevJump = !!inp.jump
+  r.duck = !!inp.duck
+  r.coyote -= dt; r.buffer -= dt
+  if (pressed) {
+    const sp = (r.ground || r.coyote > 0) && L.springs.find((s) => s.pi === r.cur) // jumping on a boost's note: the boosted jump
+    if (sp) { doJump(r, boostJump(L, r, sp)); r.boost = true; ev(r, 'spring') }
+    else if (r.ground || r.coyote > 0) doJump(r, PH.V0)
+    else if (r.airJump) { r.vy = PH.DJ; r.airJump = false; ev(r, 'dj') }
+    else if (r.power === 'dot' && !r.djUsed) { r.vy = PH.DJ; r.djUsed = true; ev(r, 'dj') }
+    else r.buffer = .13
+  } else if (r.buffer > 0 && r.ground) doJump(r, inp.jump ? PH.V0 : PH.CUT)
+  if (r.boost && r.vy <= 0) r.boost = false
+  if (released && r.vy > PH.CUT && !r.boost) r.vy = PH.CUT
+
+  // Vertical movement and landing (platforms are one-way: you only land from above).
+  r.y0 = r.y // where you were before this frame (a fast fall can pass a whole stomp zone in one frame)
+  r.vy -= PH.G * dt
+  const ny = r.y + r.vy * dt
+  const i0 = firstAfter(L, r.px - PH.HALF)
+  let land = -1
+  if (r.vy <= 0) for (let i = i0; i < L.plats.length && L.plats[i].x0 < r.px + PH.HALF; i++) {
+    const p = L.plats[i]
+    if (!r.gone[i] && r.y >= p.top - 1e-3 && ny <= p.top && (land < 0 || p.top > L.plats[land].top)) land = i
+  }
+  if (land >= 0) { if (!r.ground) { r.squash = .12; r.djUsed = false; r.airJump = false } r.y = L.plats[land].top; r.vy = 0; r.ground = true }
+  else { if (r.ground) r.coyote = .09; r.ground = false; r.y = ny }
+  // Step up a second by itself when walking into a slightly higher note.
+  if (r.ground) for (let i = i0; i < L.plats.length && L.plats[i].x0 < r.px + PH.HALF; i++) {
+    const p = L.plats[i], d = p.top - r.y
+    if (!r.gone[i] && d > 1e-6 && d <= PH.STEP + 1e-6 && p.x1 > r.px) { r.y = p.top; r.squash = .06; break }
+  }
+
+  if (r.ground) {
+    r.lastGroundX = r.px
+    let best = -1
+    for (let i = i0; i < L.plats.length && L.plats[i].x0 < r.px + PH.HALF; i++) {
+      const p = L.plats[i]
+      if (r.gone[i] || Math.abs(p.top - r.y) > 1e-6) continue
+      if (p.x0 <= r.px && r.px < p.x1 + .35) best = i
+      else if (best < 0) best = i
+    }
+    if (best >= 0 && best !== r.cur) { r.cur = best; touch(L, r, best) }
+    for (const s of L.springs) if (s.pi === r.cur && r.px >= s.x - .3) { r.vy = aimSpring(L, r, s); r.ground = false; r.boost = true; ev(r, 'spring') }
+    const cp = L.plats[r.cur]
+    if (cp && cp.crumble && r.crumbleAt[r.cur] == null) r.crumbleAt[r.cur] = r.t + .45
+  }
+  for (const k in r.crumbleAt) if (!r.gone[k] && r.t >= r.crumbleAt[k]) { r.gone[k] = true; ev(r, 'crumble') }
+  // A boost also catches you when you come down over its note (you jumped a little too far): it always works.
+  if (!r.ground && r.vy < 0) for (const s of L.springs) {
+    const p = L.plats[s.pi]
+    if (r.px < p.x0 - PH.HALF || r.px > p.x1 + PH.HALF || r.y < p.top - 1 || r.y > p.top + 2.5 || r.gone[s.pi]) continue
+    if (r.caught === s.pi && r.t - r.caughtT < .6) continue
+    if (r.y >= p.top && r.px < s.x - .3) continue // above its note before the boost: you simply land there
+    r.caught = s.pi; r.caughtT = r.t
+    r.vy = aimSpring(L, r, s); r.boost = true; r.djUsed = false; ev(r, 'spring')
+    break
+  }
+
+  // Notes passed without landing on them.
+  while (r.missScan < L.plats.length && L.plats[r.missScan].x1 < r.px - PH.HALF) {
+    const k = r.missScan++
+    if (L.plats[k].kind === 'note' && !r.hit[k]) { r.hit[k] = 2; r.missed++; breakStreak(r) }
+  }
+
+  // Lyrics/coins and power-ups.
+  const cy = r.y + (r.duck ? .4 : .85), mag = r.power === 'slur' ? 3.6 : 0
+  for (let i = firstX(L.items, r.px - 4); i < L.items.length; i++) {
+    const it = L.items[i]
+    if (it.x > r.px + 4) break
+    if (r.taken[i]) continue
+    const d = Math.hypot(it.x - r.px, it.y - cy)
+    if (d < .85 || d < mag) { r.taken[i] = true; r.items++; r.score += 5; ev(r, 'item', { i, pts: 5 }) }
+  }
+  for (let i = 0; i < L.powerups.length; i++) {
+    const pu = L.powerups[i]
+    if (r.powTaken[i] || Math.abs(pu.x - r.px) > 1.2) continue
+    if (Math.hypot(pu.x - r.px, pu.y - cy) < 1.05) {
+      r.powTaken[i] = true; r.score += 15; ev(r, 'points', { x: pu.x, y: pu.y + .6, pts: 15 })
+      if (pu.type === 'heart') { r.lives++; ev(r, 'heart'); continue }
+      if (pu.type === 'ferm') r.shield = true
+      else { r.power = pu.type; r.powerT = POWERS[pu.type].bars * L.barSec; r.djUsed = false }
+      ev(r, 'power', { type: pu.type })
+    }
+  }
+
+  // Obstacles.
+  const top = r.y + (r.duck ? PH.DUCK : PH.STAND)
+  for (let i = 0; i < L.obstacles.length; i++) {
+    const o = L.obstacles[i]
+    if (r.dead[i]) continue
+    const ox = obsX(o, r.px)
+    if (Math.abs(ox - r.px) > 1.5) continue
+    let bx = .28, b0 = o.top, b1 = o.top + .7
+    if (o.type === 'crawler') { bx = .4; b1 = o.top + .85 }
+    if (o.type === 'bird') { bx = .45; b0 = o.top + .95; b1 = o.top + 1.5 }
+    if (Math.abs(ox - r.px) > bx + PH.HALF - .05 || top <= b0 || r.y >= b1) continue
+    const stompY = o.type === 'crawler' ? o.top + .4 : o.type === 'bird' ? o.top + 1.2 : o.top + .35
+    if (stomps(r, b0, b1)) {
+      r.dead[i] = true; stomped(r, PH.V0 * .55); r.score += 25; ev(r, 'stomp', { x: ox, y: stompY + .2, pts: 25 }); continue
+    }
+    hurt(L, r)
+  }
+
+  if (r.boss && !r.done) bossStep(L, r, dt)
+  if (r.y < L.minTop - 6) fall(L, r)
+  else if (!r.done) predictNote(L, r)
+  if (!r.done && r.px > L.winX) { r.done = true; r.win = !r.boss; ev(r, r.boss ? 'bossEscaped' : 'win') }
+}
+
+// ---------- Boss fights ----------
+// The arena is a part of the song, repeated. The boss stays ahead on the right and attacks; now and then he gets
+// tired and lands on a note: jump on him. Three hits and he is beaten; every hit starts a harder stage.
+// Upper voices are attacked from above, lower voices from below; instruments and solo songs have their own bosses;
+// the bosses of fast songs make the song itself faster with every stage.
+// Attacks: shot (rolls along the notes: jump), high/swoop (flies at head height: duck), drop/dive (a sharp falls onto
+// a note ahead), rise/claw/pipes (comes up from below a note), wave/bigwave (a sound wave rolls along the notes),
+// chord (stacked notes: a wall to jump over), tick/tock (the metronome: jump, duck), tempo (the conductor),
+// and groups of them: trill (3 dives), cue (sharps on the next beats), burst, wave2, claw2.
+const BOSSES = {
+  diva: { name: 'The Prima Donna', tip: 'Sings from above: diving high notes. A fast song, and she makes it faster!', from: 'above', beats: 2, fast: true,
+    stages: [['swoop', 'dive', 'swoop', 'high', 'dive'], ['trill', 'swoop', 'dive', 'swoop', 'high', 'trill'], ['trill', 'swoop', 'dive', 'trill', 'swoop', 'high']] },
+  conductor: { name: 'The Conductor', tip: 'Conducts from above: sharps fall on his beat, and he changes the tempo.', from: 'above', beats: 2.5,
+    stages: [['cue', 'swoop', 'tempo', 'dive', 'swoop'], ['cue', 'tempo', 'swoop', 'cue', 'dive', 'high'], ['cue3', 'tempo', 'swoop', 'cue3', 'dive', 'swoop']] },
+  tuba: { name: 'The Tuba', tip: 'Booms from below: jump over the sound waves!', from: 'below', beats: 2.5,
+    stages: [['wave', 'wave', 'rise', 'wave', 'bigwave'], ['wave', 'bigwave', 'wave2', 'rise', 'bigwave'], ['wave2', 'bigwave', 'wave2', 'rise', 'bigwave', 'wave2']] },
+  crab: { name: 'The Double Bass Crab', tip: 'Pinches from below, and a fast song gets even faster!', from: 'below', beats: 2, fast: true,
+    stages: [['shot', 'claw', 'shot', 'claw', 'burst'], ['burst', 'claw', 'shot', 'claw2', 'shot'], ['burst', 'claw2', 'burst', 'claw', 'shot', 'claw2']] },
+  metronome: { name: 'The Metronome', tip: 'An attack on every beat. Tick: jump! Tock: duck!', from: 'side', beats: 1, onBeat: true, fast: true, gap: 2.4,
+    stages: [['tick', 'tick', 'tock', 'tick'], ['tick', 'tock', 'tick', 'tick', 'tock'], ['tick', 'tock', 'tick', 'tock', 'tick', 'tick']] },
+  organ: { name: 'The Organ', tip: 'Stacked chords roll at you: time your jump! Pipes come from below, sharps from above.', from: 'both', beats: 2.5,
+    stages: [['chord', 'drop', 'pipes', 'chord'], ['chord3', 'pipes', 'drop', 'chord', 'chord3'], ['chord3', 'pipes', 'chord3', 'drop', 'chord', 'pipes']] },
+}
+const BOSS_IDS = Object.keys(BOSSES)
+const BOSS_AHEAD = 11
+const STAGE_LEN = [11, 12.5, 14], STAGE_PACE = [1, .78, .6], STAGE_SPEED = [1, 1.1, 1.2]
+// Moving attacks: speed, and their box above the notes (x half width, from b0 to b1; stomped from above sy).
+const SHOT = {
+  shot: { vx: 4.2, bx: .3, b0: 0, b1: .7, sy: .35 }, tick: { vx: 4.2, bx: .3, b0: 0, b1: .7, sy: .35 },
+  high: { vx: 4.2, bx: .45, b0: .95, b1: 1.5, sy: 1.2 }, swoop: { vx: 4.2, bx: .45, b0: .95, b1: 1.5, sy: 1.2 }, tock: { vx: 4.2, bx: .45, b0: .95, b1: 1.5, sy: 1.2 },
+  wave: { vx: 6.5, bx: .5, b0: 0, b1: .45, sy: .2 }, bigwave: { vx: 5.5, bx: .55, b0: 0, b1: 1, sy: .7 },
+  chord: { vx: 2.6, bx: .38, b0: 0, b1: 1.15, sy: .85 }, chord3: { vx: 2.6, bx: .38, b0: 0, b1: 1.65, sy: 1.35 },
+}
+function bossFor(song) {
+  const k = song.kind || 'solo'
+  if (k === 'inst') return 'metronome'
+  if (k === 'solo') return 'organ'
+  const warp = song.warp || (song.warp = warpOf(song)), secs = warp(song.total) / (song.bpm / 60)
+  const fast = song.notes.length / Math.max(1, secs) >= 2.3
+  return k === 'low' ? (fast ? 'crab' : 'tuba') : (fast ? 'diva' : 'conductor')
+}
+// The arena: the busiest 8 bars of the song, repeated for about three minutes.
+function bossSong(song) {
+  const bars = song.bars.concat([song.total]), nb = Math.min(8, bars.length - 1)
+  let best = 0, bestN = -1
+  for (let k = 0; k + nb < bars.length; k++) {
+    const a = bars[k], b = bars[k + nb], n = song.notes.filter((x) => x.beat >= a - 1e-6 && x.beat < b - 1e-6).length
+    if (n > bestN) { bestN = n; best = k }
+  }
+  let a = bars[best], b = bars[best + nb], from = best, to = best + nb
+  if (bestN < 6) { a = 0; b = song.total; from = 0; to = bars.length - 1 }
+  const len = b - a, chunk = song.notes.filter((x) => x.beat >= a - 1e-6 && x.beat < b - 1e-6)
+  const reps = clamp(Math.ceil(190 / (len / (song.bpm / 60))), 3, 50)
+  const notes = [], nbars = []
+  for (let k = 0; k < reps; k++) {
+    for (const n of chunk) notes.push(Object.assign({}, n, { beat: n.beat - a + k * len, dur: Math.min(n.dur, b - n.beat) }))
+    for (let j = from; j < to; j++) nbars.push(bars[j] - a + k * len)
+  }
+  return Object.assign({}, song, { notes, bars: nbars, total: reps * len, warp: null, keyChanges: [], partName: (song.partName || '') + '#boss' })
+}
+function newBoss(L) {
+  return { id: L.boss, lives: 3, phase: 'enter', t: 0, x: L.startX + BOSS_AHEAD + 10, y: L.plats[0].top + 5, nextAtk: 1, k: 0, seed: 12345,
+    xc: 0, top: 0, from: null, marks: [], burst: 0, round: 0, stage: 0 }
+}
+function brand(b) { b.seed = (Math.imul(b.seed, 1103515245) + 12345) >>> 0; return b.seed / 4294967296 }
+function bossPhase(b, ph) { b.phase = ph; b.t = 0 }
+// The height of the notes at x (between two notes: in between).
+function groundAt(L, x) {
+  const i = firstAfter(L, x - .05), p = L.plats[i]
+  if (!p) return L.plats[L.plats.length - 1].top
+  if (p.x0 <= x + .05) return p.top
+  const q = L.plats[i - 1]
+  if (!q) return p.top
+  return q.top + (p.top - q.top) * clamp((x - q.x1) / Math.max(.01, p.x0 - q.x1), 0, 1)
+}
+function platAt(L, x) { const p = L.plats[firstAfter(L, x)]; return p && p.x0 <= x ? p : null }
+function bossHome(L, r) {
+  const cfg = BOSSES[r.boss.id], x = r.px + BOSS_AHEAD, g = groundAt(L, x), bob = Math.sin(r.t * 2.2) * .35
+  return { x, y: bob + g + (cfg.from === 'above' ? 5 : cfg.from === 'below' ? -3.4 : cfg.from === 'both' ? 3.4 : 1.8) }
+}
+// Attacks keep their distance from each other, from enemies and springs, so there is always a way through.
+function bossFree(L, r, x, gap = 3) {
+  const b = r.boss
+  b.marks = b.marks.filter((m) => m.x > r.px - 4)
+  if (b.marks.some((m) => Math.abs(m.x - x) < Math.max(gap, m.gap))) return false
+  for (const s of L.springs) if (s.x - 1.5 < x && x < s.x + 7) return false
+  for (let i = 0; i < L.obstacles.length; i++) if (!r.dead[i] && Math.abs(obsX(L.obstacles[i], x) - x) < 3) return false
+  return true
+}
+const mark = (b, x, gap) => b.marks.push({ x, gap })
+// A moving attack, launched after `delay` seconds; it meets you at xm.
+function launch(L, r, kind, delay = 0) {
+  const b = r.boss, sh = SHOT[kind], gap = kind === 'chord' || kind === 'chord3' ? 4 : BOSSES[b.id].gap || 3
+  const xm = r.px + L.speed * (delay + (b.x - r.px) / (L.speed + sh.vx))
+  if (!bossFree(L, r, xm, gap)) return false
+  let k = kind
+  if (SHOT[k].b0 > 0) { const p = platAt(L, xm); if (!p || xm - p.x0 < .9 || p.x1 - xm < .9) k = k === 'tock' ? 'tick' : 'shot' } // ducking needs ground to stand on
+  r.shots.push({ kind: k, x: b.x, y: groundAt(L, b.x), vx: -SHOT[k].vx, t: -delay })
+  mark(b, xm, gap)
+  return true
+}
+// Sharps falling onto (or coming up from below) the notes ahead: n of them, `apart` units apart, each `delay` later.
+function onNotes(L, r, kind, n, apart, delay, ahead = 1.5) {
+  const b = r.boss
+  let want = r.px + L.speed * ahead, got = 0
+  for (let i = firstAfter(L, want); i < L.plats.length && got < n && L.plats[i].x0 < want + 6 + apart * n; i++) {
+    const p = L.plats[i]
+    if (p.x1 - p.x0 < 2.2 || (p.kind !== 'note' && p.kind !== 'half')) continue
+    const lo = Math.max(p.x0 + 1, want), hi = p.x1 - 1
+    if (hi < lo) continue
+    const x = got ? lo : lo + brand(b) * Math.min(hi - lo, 1.5)
+    if (!bossFree(L, r, x, kind === 'pipes' ? 3.6 : 3)) continue
+    r.shots.push({ kind, x, y: p.top, top: p.top, t: -delay * got }); mark(b, x, kind === 'pipes' ? 3.6 : 3)
+    got++; want = x + apart; i = firstAfter(L, want) - 1
+  }
+  return got > 0
+}
+function bossAttack(L, r, kind) {
+  const b = r.boss, beat = 1 / L.bps
+  if (kind === 'tempo') {
+    if (r.tempoT > 0) return false
+    r.swing = brand(b) < .45 ? .8 : 1.25; r.tempoT = 3 * L.barSec
+    ev(r, 'tempo', { f: r.swing }); return true
+  }
+  if (kind === 'burst') { const ok = launch(L, r, 'shot'); if (ok) launch(L, r, 'shot', .5); return ok }
+  if (kind === 'wave2') { const ok = launch(L, r, 'wave'); if (ok) launch(L, r, 'wave', .6); return ok }
+  if (SHOT[kind]) { const ok = launch(L, r, kind); if (ok && (kind === 'wave' || kind === 'bigwave')) ev(r, 'wave', { big: kind === 'bigwave' }); if (ok && (kind === 'tick' || kind === 'tock')) ev(r, 'tick', { tock: kind === 'tock' }); return ok }
+  if (kind === 'trill') return onNotes(L, r, 'dive', 3, 3.2, .22)
+  if (kind === 'cue' || kind === 'cue3') return onNotes(L, r, 'drop', kind === 'cue' ? 2 : 3, 3, Math.min(beat, 3 / L.speed + .2))
+  if (kind === 'claw2') return onNotes(L, r, 'claw', 2, 3.2, .3)
+  return onNotes(L, r, kind, 1, 0, 0) // drop, dive, rise, claw, pipes
+}
+// Where the tired boss lands: a note about two seconds ahead, wide enough to stand on, that you can jump onto
+// from the note before it (never high above it).
+function bossSpot(L, r) {
+  const want = r.px + L.speed * 2.3
+  for (let i = firstAfter(L, want); i < L.plats.length - 1 && L.plats[i].x0 < want + 12; i++) {
+    const p = L.plats[i], q = L.plats[i - 1]
+    if (p.kind !== 'note' || p.x1 - p.x0 < 1.5 || !q || p.top - q.top > 1.6) continue
+    const x = clamp(want, p.x0 + .75, Math.max(p.x0 + .75, p.x1 - 1.6))
+    if (bossFree(L, r, x)) return { x, top: p.top }
+  }
+  return null
+}
+function bossReset(L, r) { // after a fall: no attacks in flight, the boss starts over from the right
+  const b = r.boss
+  r.shots = []; b.marks = []; r.swing = 1; r.tempoT = 0; r.tempo = r.tempoBase
+  if (b.phase !== 'dead' && b.phase !== 'hit') { b.from = { x: b.x, y: b.y }; bossPhase(b, 'leave') }
+}
+function bossStep(L, r, dt) {
+  const b = r.boss, cfg = BOSSES[b.id], stage = clamp(3 - b.lives, 0, 2)
+  b.t += dt
+  if (r.tempoT > 0) { r.tempoT -= dt; if (r.tempoT <= 0) { r.swing = 1; ev(r, 'tempo', { f: 1 }) } }
+  // Fast bosses: every stage the song itself gets faster.
+  const base = cfg.fast && b.phase !== 'dead' ? STAGE_SPEED[stage] : 1
+  if (base !== r.tempoBase) { if (base > r.tempoBase) ev(r, 'faster'); r.tempoBase = base }
+  r.tempo = r.tempoBase * (r.tempoT > 0 ? r.swing : 1)
+  const home = bossHome(L, r), ease = (k) => k * k * (3 - 2 * k)
+  if (b.phase === 'enter') {
+    b.x += (home.x - b.x) * Math.min(1, dt * 2); b.y += (home.y - b.y) * Math.min(1, dt * 2)
+    if (b.t > 3.2) { b.x = home.x; b.y = home.y; bossPhase(b, 'attack'); b.nextAtk = .9; r.hold = .9 }
+  } else if (b.phase === 'attack') {
+    b.x = home.x; b.y += (home.y - b.y) * Math.min(1, dt * 4)
+    const dm = L.diff === 'easy' ? 1.5 : L.diff === 'normal' ? 1.2 : 1
+    let pace = cfg.beats * dm * STAGE_PACE[stage]
+    // The metronome: on every beat (Easy: every other beat; Normal: from the second stage on).
+    if (cfg.onBeat) pace = (L.diff === 'hard' || (L.diff === 'normal' && stage) ? 1 : 2) / L.bps
+    else pace = clamp(pace / L.bps, .45, 2.6)
+    b.nextAtk -= dt
+    if (b.nextAtk <= 0) {
+      const list = cfg.stages[stage]
+      if (bossAttack(L, r, list[b.k % list.length])) { b.k++; b.nextAtk = pace }
+      else { b.nextAtk = cfg.onBeat ? pace : .2; if (cfg.onBeat) b.k++ }
+    }
+    if (b.t > STAGE_LEN[stage]) {
+      const spot = bossSpot(L, r)
+      if (spot) { b.xc = spot.x; b.top = spot.top; b.from = { x: b.x, y: b.y }; bossPhase(b, 'land'); ev(r, 'bossTired') }
+    }
+  } else if (b.phase === 'land') {
+    const e = ease(clamp(b.t / .9, 0, 1))
+    b.x = b.from.x + (b.xc - b.from.x) * e; b.y = b.from.y + (b.top - b.from.y) * e
+    if (b.t >= .9) bossPhase(b, 'tired')
+  } else if (b.phase === 'tired') {
+    b.x = b.xc; b.y = b.top
+    if (r.px > b.xc + 1.3 || b.t > 8) { b.from = { x: b.x, y: b.y }; bossPhase(b, 'leave'); ev(r, 'bossAway') }
+  } else if (b.phase === 'hit') {
+    b.y += dt * 2.5
+    if (b.t > 1) {
+      if (b.lives <= 0) { bossPhase(b, 'dead'); ev(r, 'bossDown') }
+      else { b.from = { x: b.x, y: b.y }; bossPhase(b, 'leave') }
+    }
+  } else if (b.phase === 'leave') {
+    const e = ease(clamp(b.t / 1.1, 0, 1))
+    b.x = b.from.x + (home.x - b.from.x) * e; b.y = b.from.y + (home.y - b.from.y) * e
+    if (b.t >= 1.1) { bossPhase(b, 'attack'); b.nextAtk = .6; b.round++; b.k = 0 }
+  } else if (b.phase === 'dead') {
+    b.y -= dt * 5
+    if (b.t > 1.6) { r.done = true; r.win = true; ev(r, 'win'); return }
+  }
+
+  // Attacks in flight.
+  const top = r.y + (r.duck ? PH.DUCK : PH.STAND)
+  for (const s of r.shots) {
+    if (s.dead) continue
+    s.t += dt
+    if (s.t < 0) { if (s.vx) { s.x = b.x; s.y = groundAt(L, s.x) } continue } // not launched yet
+    if (s.vx) { s.x += s.vx * dt; s.y = groundAt(L, s.x) }
+    let base = s.y, bx = .3, b0 = 0, b1 = .7, sy = .35
+    const sh = SHOT[s.kind]
+    if (sh) { bx = sh.bx; b0 = sh.b0; b1 = sh.b1; sy = sh.sy }
+    else if (s.kind === 'drop' || s.kind === 'dive') { const k = clamp(s.t / .8, 0, 1); base = s.top + 9 * (1 - k) * (1 - k) }
+    else { const k = clamp((s.t - .6) / .15, 0, 1); if (k <= 0) continue; b1 = .7 * k; sy = .35 * k; if (s.kind === 'pipes') bx = .6 } // rise, claw, pipes
+    if (Math.abs(s.x - r.px) > bx + PH.HALF - .05 || top <= base + b0 || r.y >= base + b1) continue
+    if (stomps(r, base + b0, base + b1)) { s.dead = true; stomped(r, PH.V0 * .55); r.score += 10; ev(r, 'stomp', { x: s.x, y: base + sy + .2, pts: 10 }); continue }
+    hurt(L, r)
+    if (r.done) return
+  }
+  if (r.shots.length && (r.shots[0].dead || r.shots[0].x < r.px - 8)) r.shots = r.shots.filter((s) => !s.dead && s.x > r.px - 8)
+
+  // The boss himself, while he sits on a note: jump on him. (Dizzy, he does not hurt you.)
+  if (b.phase === 'tired' || (b.phase === 'land' && b.t > .6)) {
+    if (Math.abs(b.x - r.px) < .65 + PH.HALF - .05 && top > b.y && r.y < b.y + 1.5 && stomps(r, b.y, b.y + 1.5)) {
+      b.lives--; stomped(r, PH.V0 * .75); r.score += 100 + (b.lives <= 0 ? 300 : 0)
+      bossPhase(b, 'hit'); ev(r, 'bossHit', { x: b.x, y: b.y + 2, pts: b.lives <= 0 ? 400 : 100, lives: b.lives })
+    }
+  }
+}
+
+function starsOf(L, r) {
+  if (!r.win) return 0
+  const pct = r.hits / L.noteCount, itemPct = L.items.length ? r.items / L.items.length : 1
+  return pct >= .95 && r.damage === 0 && itemPct >= .7 ? 3 : pct >= .85 ? 2 : 1
+}
+</script>
+
+<script>
+'use strict'
+// =====================================================================================
+// UI: drawing, sound, input, menus.
+// =====================================================================================
+const $ = (id) => document.getElementById(id)
+const store = {
+  get(k) { try { return localStorage.getItem(k) } catch (e) { return null } },
+  set(k, v) { try { localStorage.setItem(k, v) } catch (e) { /* not available or full */ } },
+}
+const cv = $('c'), ctx = cv.getContext('2d')
+let W = 0, H = 0, SAFE_T = 0, SAFE_L = 0, SAFE_B = 0
+function resize() {
+  const dpr = Math.min(window.devicePixelRatio || 1, 2)
+  W = innerWidth; H = innerHeight
+  const cs = getComputedStyle($('safe'))
+  SAFE_T = parseFloat(cs.paddingTop) || 0; SAFE_L = parseFloat(cs.paddingLeft) || 0; SAFE_B = parseFloat(cs.paddingBottom) || 0
+  cv.width = Math.round(W * dpr); cv.height = Math.round(H * dpr)
+  ctx.setTransform(dpr, 0, 0, dpr, 0, 0)
+  $('tip').textContent = H > W && matchMedia('(pointer: coarse)').matches ? T('Tip: turn your phone sideways for a wider view.') : ''
+}
+addEventListener('resize', resize)
+resize()
+
+const THEMES = [
+  { paper: '#f6f4ef', acc: '#5b4bdb', light: '#d6d0fa' },
+  { paper: '#eef6f2', acc: '#16936f', light: '#bfe6d8' },
+  { paper: '#fbf0e8', acc: '#d8662a', light: '#f6d2bc' },
+  { paper: '#edf1fb', acc: '#2f68d8', light: '#c8d6f6' },
+]
+const INK = '#1d1d1f', RED = '#c0392b'
+
+// ---------- Sound ----------
+let ac = null, master = null
+// iOS: a sound engine can be 'suspended' or 'interrupted' (after a call, the lock screen, other audio):
+// it is woken up again on every tap. While it is not running, no sounds are made (they would only pile up).
+function audio() {
+  try {
+    // A sound engine that does not wake up after a few taps (iOS after switching apps) is replaced by a new one.
+    if (ac && (ac.state === 'closed' || (ac.state !== 'running' && ++ac.tries > 2))) closeAudio()
+    if (!ac) {
+      ac = new (window.AudioContext || window.webkitAudioContext)()
+      master = ac.createGain(); master.gain.value = .6; master.connect(ac.destination)
+      ac.tries = 0
+    }
+    if (ac.state === 'running') ac.tries = 0
+    else {
+      const r = ac.resume(); if (r && r.catch) r.catch(() => {})
+      // Unlock trick for WebKit: a silent sample played inside the tap.
+      const b = ac.createBuffer(1, 1, ac.sampleRate), src = ac.createBufferSource()
+      src.buffer = b; src.connect(ac.destination); src.start(0)
+    }
+  } catch (e) { /* no sound available */ }
+}
+const live = () => !!ac && ac.state === 'running'
+function closeAudio() { if (ac) { const a = ac; ac = null; try { const r = a.close(); if (r && r.catch) r.catch(() => {}) } catch (e) {} master = null; noiseBuf = null; voices.length = 0; songBus = null; preTones.clear(); rang.clear() } }
+addEventListener('pagehide', closeAudio)
+const voices = [] // live note voices (at most 12; the oldest fades out quickly)
+const rang = new Map() // platform -> when its early note began, though it was taken back (landing there soon after: no second note)
+const preTones = new Map() // platform -> a note scheduled before landing (taken back if you do not land)
+// The notes sound this much after the landing (0: right when you land on them).
+const NOTE_DELAY = 0
+function tone(midi, when = 0, len = .6, vol = .3, wave = 'triangle', dest = master) {
+  if (!live()) return
+  const t = ac.currentTime + when, f = 440 * Math.pow(2, (midi - 69) / 12)
+  const g = ac.createGain()
+  for (let i = voices.length - 1; i >= 0; i--) if (voices[i].end < ac.currentTime) voices.splice(i, 1)
+  if (dest === master) {
+    if (voices.length >= 10) { const o = voices.shift(); try { o.g.gain.cancelScheduledValues(ac.currentTime); o.g.gain.setTargetAtTime(0, ac.currentTime, .02) } catch (e) {} }
+    voices.push({ g, end: t + len + .25 })
+  }
+  g.gain.setValueAtTime(0, t)
+  g.gain.linearRampToValueAtTime(vol, t + .003)
+  g.gain.exponentialRampToValueAtTime(vol * .35, t + .18)
+  g.gain.exponentialRampToValueAtTime(.0005, t + len + .25)
+  const lp = ac.createBiquadFilter(); lp.type = 'lowpass'
+  lp.frequency.setValueAtTime(f * 7, t); lp.frequency.exponentialRampToValueAtTime(f * 2.2, t + .45)
+  for (const [type, mul, v] of [[wave, 1, 1], ['sine', 2, .3]]) { // two voices per note: light enough for a phone
+    const o = ac.createOscillator(), og = ac.createGain()
+    o.type = type; o.frequency.value = f * mul; og.gain.value = v
+    o.connect(og); og.connect(lp); o.start(t); o.stop(t + len + .28)
+  }
+  lp.connect(g); g.connect(dest)
+  return { g, ctx: ac, t }
+}
+function untone(h) {
+  if (!h || h.ctx !== ac) return
+  if (ac.currentTime >= h.t - .005) return 'rang' // already sounding: let it ring (cutting it clicks)
+  try { h.g.gain.cancelScheduledValues(0); h.g.gain.setValueAtTime(0, 0) } catch (e) {}
+}
+function blip(f0, f1, len, vol = .25, type = 'sine') {
+  if (!live()) return
+  const t = ac.currentTime, o = ac.createOscillator(), g = ac.createGain()
+  o.type = type; o.frequency.setValueAtTime(f0, t); o.frequency.exponentialRampToValueAtTime(f1, t + len)
+  g.gain.setValueAtTime(vol, t); g.gain.exponentialRampToValueAtTime(.001, t + len + .05)
+  o.connect(g); g.connect(master); o.start(t); o.stop(t + len + .1)
+}
+let noiseBuf = null
+function brush() {
+  if (!live()) return
+  if (!noiseBuf) {
+    noiseBuf = ac.createBuffer(1, Math.round(ac.sampleRate * .08), ac.sampleRate)
+    const d = noiseBuf.getChannelData(0)
+    for (let i = 0; i < d.length; i++) d[i] = Math.random() * 2 - 1
+  }
+  const t = ac.currentTime, src = ac.createBufferSource(), bp = ac.createBiquadFilter(), g = ac.createGain()
+  src.buffer = noiseBuf; bp.type = 'bandpass'; bp.frequency.value = 5200; bp.Q.value = 1.2
+  g.gain.setValueAtTime(0, t); g.gain.linearRampToValueAtTime(.045, t + .006); g.gain.exponentialRampToValueAtTime(.0005, t + .07)
+  src.connect(bp); bp.connect(g); g.connect(master); src.start(t); src.stop(t + .08)
+}
+// How long a sound takes to come out of the speaker. iOS often reports nothing useful: assume 45 ms there.
+function outLatency() {
+  if (!ac) return .045
+  const l = (ac.outputLatency || 0) + (ac.baseLatency || 0)
+  return l >= .02 ? Math.min(.2, l) : .045
+}
+const buzz = (ms) => { try { navigator.vibrate && navigator.vibrate(ms) } catch (e) {} }
+let songBus = null
+let songTimer = 0
+function stopSong() {
+  clearInterval(songTimer); songTimer = 0
+  if (!songBus || !ac) return
+  const b = songBus
+  songBus = null
+  try { b.gain.setTargetAtTime(0, ac.currentTime, .04); setTimeout(() => b.disconnect(), 400) } catch (e) { b.disconnect() }
+}
+function playSong(song, rate = 1) {
+  audio()
+  stopSong()
+  songBus = ac.createGain(); songBus.connect(master)
+  const bps = song.bpm / 60 * rate
+  const warp = song.warp || (song.warp = warpOf(song))
+  const t0 = ac.currentTime + .3, bus = songBus
+  let i = 0
+  const feed = () => {
+    if (songBus !== bus || !live()) { if (songBus !== bus) { clearInterval(songTimer); songTimer = 0 } return }
+    const now = ac.currentTime
+    while (i < song.notes.length) {
+      const n = song.notes[i], at = t0 + warp(n.beat) / bps
+      if (at - t0 > 90) { i = song.notes.length; break }
+      if (at > now + 1.5) break
+      if (at >= now - .05) tone(n.midi, at - now, n.dur / bps, .3, 'triangle', bus)
+      i++
+    }
+    if (i >= song.notes.length) { clearInterval(songTimer); songTimer = 0 }
+  }
+  feed(); songTimer = setInterval(feed, 250)
+}
+
+// ---------- Drawing helpers ----------
+function notehead(x, y, r, color, hollow) {
+  ctx.save(); ctx.translate(x, y); ctx.rotate(-.35)
+  ctx.beginPath(); ctx.ellipse(0, 0, r * 1.25, r * .9, 0, 0, Math.PI * 2)
+  if (hollow) { ctx.lineWidth = Math.max(1.5, r * .32); ctx.strokeStyle = color; ctx.stroke() } else { ctx.fillStyle = color; ctx.fill() }
+  ctx.restore()
+}
+function line(x0, y0, x1, y1) { ctx.beginPath(); ctx.moveTo(x0, y0); ctx.lineTo(x1, y1); ctx.stroke() }
+
+// ---------- Game state ----------
+let L = null, run = null, playing = false, paused = false, current = null
+const input = { jump: false, duck: false, keyJump: false, keyDuck: false, pointers: new Set(), duckers: new Set() }
+// Both edges of the screen: hold there to duck (tap anywhere else to jump).
+const duckW = () => clamp(W * .2, 64, 130)
+const inDuckZone = (x) => x < duckW() || x > W - duckW()
+let camY = 0, themeIdx = 0, parts = [], acc = 0, shake = 0, banner = null, streakPulse = 0
+let endless = null // { list, keys, round, prefetch } while playing the endless mode
+function addPart(q) { parts.push(q); if (parts.length > 40) parts.shift() }
+
+function syncInput() {
+  input.jump = input.keyJump || input.pointers.size > 0
+  input.duck = input.keyDuck || input.duckers.size > 0
+}
+
+function handleEvents() {
+  for (const e of run.events) {
+    if (e.type === 'note') { const at = rang.get(e.i); rang.delete(e.i); if (!(at != null && ac && ac.currentTime - at < .9)) tone(e.midi, 0, Math.min(1.6, e.dur)) } // rang already (taken back too late): not twice
+    else if (e.type === 'preNote') { const h = tone(e.midi, Math.max(0, e.inSec - outLatency() + NOTE_DELAY), Math.min(1.6, e.dur)); if (h) { preTones.set(e.i, h); if (preTones.size > 24) preTones.delete(preTones.keys().next().value) } }
+    else if (e.type === 'preCancel') { const h = preTones.get(e.i); if (untone(h) === 'rang') { rang.set(e.i, h.t); if (rang.size > 24) rang.delete(rang.keys().next().value) } preTones.delete(e.i) }
+    else if (e.type === 'spring') buzz(20)
+    else if (e.type === 'item') { const it = L.items[e.i]; addPart({ x: it.x, y: it.y, vy: 1.5, life: .8, text: it.coin ? '+5' : it.text + '  +5', item: !it.coin }) }
+    else if (e.type === 'pop') addPart({ x: e.x, y: e.y, vy: 2.2, life: .9, text: '+' + e.pts, pts: true, big: e.mult > 1 })
+    else if (e.type === 'points') addPart({ x: e.x, y: e.y, vy: 1.6, life: 1, text: '+' + e.pts, pts: true })
+    else if (e.type === 'stomp') { buzz(25); addPart({ x: e.x, y: e.y, vy: 2, life: .9, text: '+' + e.pts, pts: true, big: true }) }
+    else if (e.type === 'streak') { streakPulse = .6; const w = { 8: 'Nice!', 16: 'Great!', 32: 'Super!', 64: 'Fantastic!' }[e.n]; banner = { text: (w ? T(w) + ' ' : '') + T('{n} in a row · ×{m}', { n: e.n, m: e.mult }), t: 1.6 } }
+    else if (e.type === 'streakLost') banner = { text: T('Streak lost'), t: 1.1, grey: true }
+    else if (e.type === 'heart') { [0, 4, 7, 12].forEach((s, k) => tone(76 + s, k * .07, .18, .14, 'sine')); buzz(20); banner = { text: T('Extra life!') + ' ♥', t: 1.6 } }
+    else if (e.type === 'power') { brush(); [0, 4, 7, 12].forEach((s, k) => tone(72 + s, k * .06, .15, .14, 'sine')); buzz(15) }
+    else if (e.type === 'bossAway') banner = { text: T('Too slow!'), t: 1.1, grey: true }
+    else if (e.type === 'bossHit') { shake = .3; buzz(40); addPart({ x: e.x, y: e.y, vy: 2, life: 1.1, text: '+' + e.pts, pts: true, big: true }); [0, 4, 7].forEach((s, k) => tone(67 + s, k * .07, .2, .16, 'sine')); banner = e.lives > 0 ? { text: T('Hit! {n} to go', { n: e.lives }), t: 1.4 } : null }
+    else if (e.type === 'bossDown') { shake = .6; banner = { text: T('Boss defeated!'), t: 2 }; [0, 4, 7, 12, 16].forEach((s, k) => tone(60 + s, k * .1, .35, .16, 'sine')) }
+    else if (e.type === 'wave') { if (e.big) { shake = .18; buzz(30) } ; blip(e.big ? 70 : 95, e.big ? 45 : 60, e.big ? .35 : .22, .16, 'triangle') }
+    else if (e.type === 'tick') blip(e.tock ? 900 : 1500, e.tock ? 800 : 1300, .03, .05, 'square')
+    else if (e.type === 'faster') banner = { text: T('Faster!'), t: 1.4 }
+    else if (e.type === 'tempo') banner = { text: e.f > 1 ? 'accelerando!' : e.f < 1 ? 'ritardando…' : 'a tempo', t: 1.3, grey: e.f === 1 }
+    else if (e.type === 'bossTired') banner = { text: T('Now! Jump on it!'), t: 1.6 }
+    else if (e.type === 'shield') { blip(1200, 600, .3, .2); shake = .25 }
+    else if (e.type === 'hurt') { blip(160, 45, .25, .55); buzz(90); shake = .35 }
+    else if (e.type === 'crumble') blip(300, 120, .12, .12, 'sawtooth')
+    else if (e.type === 'rewind') blip(600, 200, .3, .1)
+    else if (e.type === 'gift') { [0, 7, 12].forEach((s, k) => tone(79 + s, .3 + k * .08, .2, .12, 'sine')); addPart({ x: run.px + 1, y: run.y + 2.6, vy: .5, life: 2.6, text: T('A shield for you 𝄐'), item: true }) }
+  }
+  run.events.length = 0
+}
+
+function update(dt) {
+  for (const q of parts) { q.y += q.vy * dt; q.life -= dt }
+  if (parts.some((q) => q.life <= 0)) parts = parts.filter((q) => q.life > 0)
+  shake = Math.max(0, shake - dt); streakPulse = Math.max(0, streakPulse - dt)
+  if (banner && !paused) { banner.t -= dt; if (banner.t <= 0) banner = null }
+  if (!playing || paused) return
+  acc += Math.min(dt, .1)
+  while (acc >= 1 / 60) {
+    step(L, run, 1 / 60, input)
+    acc -= 1 / 60
+    if (run.done) break
+  }
+  handleEvents()
+  if (endless && endless.banner && run.hold <= 0) endless.banner = ''
+  if (run.done && run.win && endless && playing) nextRound()
+  else if (run.done && playing) { playing = false; setTimeout(showEnd, run.win ? 900 : 700) }
+}
+
+// ---------- Rendering ----------
+function draw() {
+  const th = THEMES[themeIdx]
+  ctx.fillStyle = th.paper; ctx.fillRect(0, 0, W, H)
+  if (!L) { idleStaff(); return }
+  for (const t of L.themes) if (run.px >= t.x) themeIdx = t.i
+
+  const wide = !!run.boss || H < 500 // boss fights and phones held sideways: see more, above and below
+  const ss = wide ? clamp(Math.min(H / 13.5, W / 11), 14, 40) : clamp(Math.min(H / 11, W / 9.5), 16, 46)
+  let want = clamp(run.y, L.minTop, L.maxTop + 1)
+  if (wide) { let lo = run.y; for (let i = firstAfter(L, run.px); i < L.plats.length && L.plats[i].x0 < run.px + 9; i++) lo = Math.min(lo, L.plats[i].top); want = (want + lo) / 2 }
+  camY += (want - camY) * Math.min(1, 1 / 20)
+  const sx0 = shake > 0 ? (Math.random() - .5) * shake * 14 : 0
+  const camX = run.px - (W * (run.boss ? .2 : .27)) / ss
+  const X = (wx) => (wx - camX) * ss + sx0
+  const Y = (wy) => H * (wide ? .6 : .64) - (wy - camY) * ss
+  const vis = (a, b) => X(b) > -40 && X(a) < W + 40
+
+  // Staff + bar lines (checkpoints).
+  ctx.strokeStyle = 'rgba(29,29,31,.42)'; ctx.lineWidth = 1.2
+  for (let i = 0; i < 5; i++) line(0, Y(i), W, Y(i))
+  ctx.strokeStyle = 'rgba(29,29,31,.16)'
+  for (const b of L.bars) if (vis(b, b)) line(X(b), Y(0), X(b), Y(4))
+  const fx = X(L.winX - 1)
+  if (fx < W + 20) { ctx.fillStyle = INK; ctx.fillRect(fx - .5 * ss, Y(4), 2, 4 * ss); ctx.fillRect(fx - .15 * ss, Y(4), .3 * ss, 4 * ss) }
+
+  // Platforms.
+  for (let i = firstAfter(L, camX - 2); i < L.plats.length; i++) {
+    const p = L.plats[i]
+    if (X(p.x0) > W + 40) break
+    let off = 0, alpha = 1
+    if (run.gone[i]) { const tt = run.t - run.crumbleAt[i]; off = tt * tt * 30; alpha = Math.max(0, 1 - tt * 1.5) }
+    else if (run.crumbleAt[i] != null) off = Math.sin(run.t * 70) * .05
+    if (alpha <= 0) continue
+    ctx.globalAlpha = alpha
+    const a = X(p.x0), b = X(p.x1), top = Y(p.top - off), bot = Y(p.y - .12 - off)
+    if (p.kind === 'stone') {
+      ctx.strokeStyle = INK; ctx.lineWidth = 1.5; line(a - 4, top, b + 4, top)
+      ctx.fillStyle = INK; ctx.fillRect(a + (b - a) * .18, top, (b - a) * .64, .38 * ss)
+      ctx.globalAlpha = 1; continue
+    }
+    const hit = run.hit[i] === 1 || (p.kind === 'half' && run.hit[i - 1] === 1)
+    ctx.fillStyle = p.kind === 'start' || p.kind === 'end' ? '#e4e0d8' : hit ? th.acc : run.hit[i] === 2 ? '#e2ddd5' : th.light
+    ctx.beginPath(); ctx.roundRect(a, top, Math.max(2, b - a), bot - top, (bot - top) / 2); ctx.fill()
+    if (p.crumble) { ctx.setLineDash([4, 4]); ctx.strokeStyle = th.acc; ctx.lineWidth = 1.5; ctx.stroke(); ctx.setLineDash([]) }
+    if (p.kind === 'note') {
+      const n = L.song.notes[p.ni], hx = a + .6 * ss, hy = Y(p.y - off)
+      ctx.strokeStyle = 'rgba(29,29,31,.55)'; ctx.lineWidth = 1.2
+      for (let l = -1; l >= p.y; l--) line(hx - .85 * ss, Y(l), hx + .85 * ss, Y(l))
+      for (let l = 5; l <= p.y; l++) line(hx - .85 * ss, Y(l), hx + .85 * ss, Y(l))
+      notehead(hx, hy, ss * .42, run.hit[i] === 2 ? '#b9b2a6' : INK, n.dur >= 2)
+      if (p.crumble) { ctx.fillStyle = INK; ctx.beginPath(); ctx.arc(hx, Y(p.top + .45 - off), ss * .1, 0, 7); ctx.fill() }
+    }
+    ctx.globalAlpha = 1
+  }
+  // Accent springs.
+  for (const s of L.springs) {
+    if (!vis(s.x - 1, s.x + 1)) continue
+    ctx.strokeStyle = THEMES[themeIdx].acc; ctx.lineWidth = Math.max(2.5, ss * .12); ctx.lineJoin = 'round'
+    ctx.beginPath(); ctx.moveTo(X(s.x - .3), Y(s.top + .75)); ctx.lineTo(X(s.x + .3), Y(s.top + .5)); ctx.lineTo(X(s.x - .3), Y(s.top + .25)); ctx.stroke()
+  }
+
+  // Items (lyrics and coins): only the visible ones, one font for all.
+  const lyFont = `italic 600 ${Math.round(ss * .5)}px Georgia, serif`
+  ctx.font = lyFont; ctx.textAlign = 'center'; ctx.lineWidth = 1.5
+  for (let i = firstX(L.items, camX - 3); i < L.items.length; i++) {
+    const it = L.items[i]
+    if (X(it.x - 2) > W + 40) break
+    if (run.taken[i]) continue
+    const bob = Math.sin(run.t * 4 + i) * .08
+    if (it.coin) {
+      ctx.fillStyle = '#f2b33d'; ctx.beginPath(); ctx.arc(X(it.x), Y(it.y + bob), ss * .2, 0, 7); ctx.fill()
+      ctx.strokeStyle = '#c98a10'; ctx.stroke()
+    } else { ctx.fillStyle = th.acc; ctx.fillText(it.text, X(it.x), Y(it.y + bob)) }
+  }
+  // Power-up bubbles.
+  for (let i = 0; i < L.powerups.length; i++) {
+    const pu = L.powerups[i]
+    if (run.powTaken[i] || !vis(pu.x - 1, pu.x + 1)) continue
+    drawBubble(X(pu.x), Y(pu.y + Math.sin(run.t * 3 + i) * .12), ss, pu.type, th)
+  }
+  // Obstacles.
+  for (let i = 0; i < L.obstacles.length; i++) {
+    const o = L.obstacles[i], ox = obsX(o, run.px)
+    if (!vis(ox - 1, ox + 1)) continue
+    if (run.dead[i]) continue
+    if (o.type === 'spike') drawSharp(X(ox), Y(o.top), ss)
+    else if (o.type === 'crawler') drawCrawler(X(ox), Y(o.top), ss, run.t)
+    else drawBird(X(ox), Y(o.top + 1.22), ss, run.t)
+  }
+
+  if (run.boss) drawBossFight(X, Y, ss, th)
+  drawPlayer(X(run.px), Y(run.y), ss, th)
+
+  // Particles: flying syllables and the points you just got.
+  const ptFont = `700 ${Math.round(ss * .42)}px system-ui, sans-serif`, ptBig = `800 ${Math.round(ss * .55)}px system-ui, sans-serif`
+  let cur = ''
+  ctx.textAlign = 'center'
+  for (const q of parts) {
+    const f = q.item ? lyFont : q.big ? ptBig : ptFont
+    if (f !== cur) { ctx.font = f; cur = f }
+    ctx.globalAlpha = clamp(q.life * 1.4, 0, 1); ctx.fillStyle = q.pts ? (q.big ? th.acc : INK) : th.acc
+    ctx.fillText(q.text, X(q.x), Y(q.y))
+  }
+  ctx.globalAlpha = 1
+  drawHud(ss, th)
+}
+
+// ---------- Bosses ----------
+const BOSS_COLOR = { diva: '#c2185b', conductor: '#37474f', tuba: '#d39b1c', crab: '#b5523b', metronome: '#8d5a2b', organ: '#7a8794' }
+function eyes(x1, x2, y, r, angry) {
+  for (const ex of [x1, x2]) {
+    ctx.fillStyle = '#fff'; ctx.beginPath(); ctx.arc(ex, y, r, 0, 7); ctx.fill()
+    ctx.fillStyle = INK; ctx.beginPath(); ctx.arc(ex - r * .25, y + r * .1, r * .5, 0, 7); ctx.fill()
+  }
+  if (angry) { ctx.strokeStyle = INK; ctx.lineWidth = Math.max(2, r * .45); line(x1 - r, y - r * 1.5, x1 + r, y - r * .9); line(x2 + r, y - r * 1.5, x2 - r, y - r * .9) }
+}
+function drawBossBody(b, x, y, s, t) {
+  // x, y: where he stands (the middle of his feet); s: one world unit in pixels. About 1.3 wide and 1.5 high.
+  const c = BOSS_COLOR[b.id], angry = b.phase !== 'tired'
+  ctx.save(); ctx.translate(x, y)
+  if (b.phase === 'hit' && Math.floor(b.t * 14) % 2) ctx.globalAlpha = .35
+  ctx.lineCap = 'round'; ctx.lineJoin = 'round'
+  if (b.id === 'diva') {
+    ctx.save(); ctx.rotate(-.3); ctx.fillStyle = c; ctx.beginPath(); ctx.ellipse(0, -.65 * s, .78 * s, .58 * s, 0, 0, 7); ctx.fill(); ctx.restore()
+    ctx.strokeStyle = c; ctx.lineWidth = .12 * s; line(.62 * s, -.85 * s, .62 * s, -2.3 * s)
+    ctx.beginPath(); ctx.moveTo(.62 * s, -2.3 * s); ctx.quadraticCurveTo(1.2 * s, -1.9 * s, 1.0 * s, -1.4 * s); ctx.stroke()
+    ctx.fillStyle = '#f2b33d'; ctx.beginPath(); ctx.moveTo(-.55 * s, -1.15 * s)
+    for (let k = 0; k <= 4; k++) ctx.lineTo((-.55 + k * .25) * s, (k % 2 ? -1.15 : -1.5) * s)
+    ctx.lineTo(.45 * s, -1.05 * s); ctx.closePath(); ctx.fill()
+    eyes(-.3 * s, .15 * s, -.75 * s, .15 * s, angry)
+    ctx.fillStyle = '#fff'; ctx.beginPath(); ctx.ellipse(-.05 * s, -.38 * s, .14 * s, (.06 + Math.abs(Math.sin(t * 8)) * .08) * s, 0, 0, 7); ctx.fill()
+  } else if (b.id === 'conductor') {
+    ctx.save(); ctx.rotate(-.3); ctx.fillStyle = c; ctx.beginPath(); ctx.ellipse(0, -.6 * s, .72 * s, .55 * s, 0, 0, 7); ctx.fill(); ctx.restore()
+    ctx.strokeStyle = c; ctx.lineWidth = .14 * s; line(.6 * s, -.8 * s, .6 * s, -2.2 * s)
+    ctx.fillStyle = '#c0392b'; ctx.beginPath(); ctx.moveTo(-.05 * s, -.2 * s); ctx.lineTo(-.3 * s, -.05 * s); ctx.lineTo(-.3 * s, -.35 * s); ctx.closePath(); ctx.fill()
+    ctx.beginPath(); ctx.moveTo(-.05 * s, -.2 * s); ctx.lineTo(.2 * s, -.05 * s); ctx.lineTo(.2 * s, -.35 * s); ctx.closePath(); ctx.fill()
+    const a = -2.2 + Math.sin(t * (b.phase === 'tired' ? 2 : 7)) * .6
+    ctx.strokeStyle = '#ddd'; ctx.lineWidth = .07 * s; line(-.6 * s, -.7 * s, -.6 * s + Math.cos(a) * 1.1 * s, -.7 * s + Math.sin(a) * 1.1 * s)
+    eyes(-.3 * s, .12 * s, -.72 * s, .15 * s, angry)
+  } else if (b.id === 'tuba') {
+    ctx.fillStyle = c; ctx.strokeStyle = '#9c7012'; ctx.lineWidth = .08 * s
+    ctx.beginPath(); ctx.moveTo(-.35 * s, 0); ctx.lineTo(-.75 * s, -1.4 * s); ctx.lineTo(.75 * s, -1.4 * s); ctx.lineTo(.35 * s, 0); ctx.closePath(); ctx.fill(); ctx.stroke()
+    ctx.fillStyle = '#5b4210'; ctx.beginPath(); ctx.ellipse(0, -1.4 * s, .75 * s, .2 * s, 0, 0, 7); ctx.fill()
+    ctx.strokeStyle = c; ctx.lineWidth = .14 * s; ctx.beginPath(); ctx.arc(.55 * s, -.45 * s, .3 * s, -1.2, 1.6); ctx.stroke()
+    eyes(-.25 * s, .2 * s, -.8 * s, .15 * s, angry)
+  } else if (b.id === 'crab') {
+    ctx.strokeStyle = c; ctx.lineWidth = .1 * s
+    for (const k of [-1, 1]) for (const j of [0, 1, 2]) line(k * .3 * s, -.35 * s, k * (.75 + j * .12) * s, (-.05 + j * .02) * s)
+    const pinch = Math.sin(t * (b.phase === 'tired' ? 2 : 9)) * .15
+    for (const k of [-1, 1]) { ctx.fillStyle = c; ctx.beginPath(); ctx.arc(k * .85 * s, (-1.05 + pinch * k) * s, .26 * s, .6, 5.7); ctx.lineTo(k * .85 * s, (-1.05 + pinch * k) * s); ctx.fill(); line(k * .5 * s, -.6 * s, k * .8 * s, -.9 * s) }
+    ctx.fillStyle = c; ctx.beginPath(); ctx.ellipse(0, -.55 * s, .6 * s, .42 * s, 0, 0, 7); ctx.fill()
+    ctx.fillStyle = '#5a2418'; ctx.font = `italic 700 ${Math.round(.4 * s)}px Georgia, serif`; ctx.textAlign = 'center'; ctx.fillText('f   f', 0, -.38 * s)
+    ctx.strokeStyle = c; line(-.18 * s, -.85 * s, -.22 * s, -1.25 * s); line(.18 * s, -.85 * s, .22 * s, -1.25 * s)
+    eyes(-.22 * s, .22 * s, -1.3 * s, .13 * s, angry)
+  } else if (b.id === 'metronome') {
+    ctx.fillStyle = c; ctx.beginPath(); ctx.moveTo(-.6 * s, 0); ctx.lineTo(-.25 * s, -1.6 * s); ctx.lineTo(.25 * s, -1.6 * s); ctx.lineTo(.6 * s, 0); ctx.closePath(); ctx.fill()
+    ctx.fillStyle = '#e8d8c0'; ctx.beginPath(); ctx.moveTo(-.4 * s, -.15 * s); ctx.lineTo(-.18 * s, -1.4 * s); ctx.lineTo(.18 * s, -1.4 * s); ctx.lineTo(.4 * s, -.15 * s); ctx.closePath(); ctx.fill()
+    const a = Math.sin(t * Math.PI * (L ? L.bps : 2)) * .45
+    ctx.strokeStyle = INK; ctx.lineWidth = .06 * s; line(0, -.3 * s, Math.sin(a) * 1.3 * s, -.3 * s - Math.cos(a) * 1.3 * s)
+    ctx.fillStyle = INK; ctx.fillRect(Math.sin(a) * .9 * s - .1 * s, -.3 * s - Math.cos(a) * .9 * s - .08 * s, .2 * s, .16 * s)
+    eyes(-.2 * s, .2 * s, -.5 * s, .12 * s, angry)
+  } else {
+    const hs = [1.2, 1.6, 2.0, 1.6, 1.2]
+    for (let k = 0; k < 5; k++) {
+      const px = (-.6 + k * .3) * s
+      ctx.fillStyle = '#b8c0c8'; ctx.fillRect(px - .1 * s, -hs[k] * s, .2 * s, hs[k] * s)
+      ctx.fillStyle = INK; ctx.fillRect(px - .06 * s, -(hs[k] - .25) * s, .12 * s, .06 * s)
+    }
+    ctx.fillStyle = '#6d4c41'; ctx.fillRect(-.75 * s, -.65 * s, 1.5 * s, .65 * s)
+    eyes(-.25 * s, .25 * s, -.38 * s, .13 * s, angry)
+  }
+  ctx.restore()
+  if (b.phase === 'tired') { // dizzy stars, and an arrow: jump here
+    ctx.fillStyle = '#f2b33d'; ctx.font = `${Math.round(.4 * s)}px system-ui, sans-serif`; ctx.textAlign = 'center'
+    for (let k = 0; k < 3; k++) { const a = t * 3 + k * 2.1; ctx.fillText('★', x + Math.cos(a) * .6 * s, y - 1.9 * s + Math.sin(a) * .15 * s) }
+    ctx.fillStyle = THEMES[themeIdx].acc; ctx.font = `800 ${Math.round(.6 * s)}px system-ui, sans-serif`
+    ctx.fillText('▼', x, y - (2.5 + Math.abs(Math.sin(t * 5)) * .3) * s)
+  }
+}
+function drawShot(sh, X, Y, ss, t) {
+  const x = X(sh.x)
+  if (sh.kind === 'shot') {
+    const y = Y(sh.y), r = .3 * ss
+    ctx.save(); ctx.translate(x, y - r); ctx.rotate(-t * 9)
+    ctx.fillStyle = RED; ctx.beginPath(); ctx.ellipse(0, 0, r * 1.15, r * .9, 0, 0, 7); ctx.fill()
+    ctx.restore(); eyes(x - r * .35, x + r * .2, y - r * 1.1, r * .3, true)
+  } else if (sh.kind === 'tick') {
+    const y = Y(sh.y), r = .32 * ss
+    ctx.fillStyle = BOSS_COLOR.metronome; ctx.beginPath(); ctx.moveTo(x - r, y); ctx.lineTo(x - r * .5, y - r * 1.9); ctx.lineTo(x + r * .5, y - r * 1.9); ctx.lineTo(x + r, y); ctx.closePath(); ctx.fill()
+    ctx.fillStyle = RED; ctx.fillRect(x - r * .5, y - r * 1.2, r, r * .35)
+  } else if (sh.kind === 'tock') {
+    const y = Y(sh.y + 1.22), r = .3 * ss
+    ctx.fillStyle = BOSS_COLOR.metronome; ctx.beginPath(); ctx.moveTo(x - r, y + r * .9); ctx.lineTo(x - r * .5, y - r); ctx.lineTo(x + r * .5, y - r); ctx.lineTo(x + r, y + r * .9); ctx.closePath(); ctx.fill()
+    ctx.fillStyle = RED; ctx.fillRect(x - r * .5, y - r * .2, r, r * .35)
+  } else if (sh.kind === 'wave' || sh.kind === 'bigwave') {
+    // A sound wave from the tuba: arcs rolling along the notes.
+    const y = Y(sh.y), h = (sh.kind === 'bigwave' ? 1.0 : .45) * ss, c = BOSS_COLOR.tuba
+    ctx.strokeStyle = c; ctx.lineCap = 'round'
+    for (let k = 0; k < 3; k++) {
+      ctx.globalAlpha = 1 - k * .28; ctx.lineWidth = Math.max(2.5, ss * (.13 - k * .025))
+      const rr = h * (1 + k * .35), ox = x + k * .28 * ss
+      ctx.beginPath(); ctx.ellipse(ox, y, rr * .55, rr, 0, Math.PI * .5, Math.PI * 1.5); ctx.stroke()
+    }
+    ctx.globalAlpha = .18; ctx.fillStyle = c; ctx.beginPath(); ctx.ellipse(x + .2 * ss, y, h * .7, h, 0, Math.PI, 0); ctx.fill(); ctx.globalAlpha = 1
+  } else if (sh.kind === 'chord' || sh.kind === 'chord3') {
+    // Stacked notes: a wall to jump over.
+    const n = sh.kind === 'chord' ? 2 : 3, y = Y(sh.y)
+    ctx.fillStyle = 'rgba(192,57,43,.12)'; ctx.fillRect(x - .45 * ss, Y(sh.y + SHOT[sh.kind].b1), .9 * ss, SHOT[sh.kind].b1 * ss)
+    for (let k = 0; k < n; k++) notehead(x, y - (.3 + k * .5) * ss, .27 * ss, RED, false)
+    ctx.strokeStyle = RED; ctx.lineWidth = Math.max(2, ss * .08); line(x + .3 * ss, y - .3 * ss, x + .3 * ss, y - (n * .5 + .5) * ss)
+  } else if (sh.kind === 'high' || sh.kind === 'swoop') {
+    // swoop: comes down diagonally from the sky, then flies at head height.
+    const dy = sh.kind === 'swoop' ? clamp((sh.x - run.px - 3.5) * .75, 0, 7) : 0
+    const y = Y(sh.y + 1.22 + dy), f = Math.sin(t * 16) * .12 * ss
+    if (dy > 0) { ctx.strokeStyle = 'rgba(192,57,43,.25)'; ctx.lineWidth = 2; line(x + .3 * ss, y - .2 * ss, x + 1.1 * ss, y - 1.0 * ss) }
+    notehead(x, y + .12 * ss, .26 * ss, RED, false)
+    ctx.strokeStyle = RED; ctx.lineWidth = Math.max(2, ss * .08); line(x + .26 * ss, y + .1 * ss, x + .26 * ss, y - .55 * ss)
+    ctx.beginPath(); ctx.moveTo(x + .26 * ss, y - .55 * ss); ctx.quadraticCurveTo(x + .6 * ss, y - .35 * ss + f, x + .55 * ss, y - .05 * ss + f); ctx.stroke()
+  } else if (sh.kind === 'quake') {
+    const y = Y(sh.y)
+    ctx.strokeStyle = THEMES[themeIdx].acc; ctx.lineWidth = Math.max(2, ss * .09)
+    for (let k = 0; k < 3; k++) { ctx.globalAlpha = 1 - k * .3; ctx.beginPath(); ctx.arc(x + k * .3 * ss, y, (.3 + k * .18) * ss, Math.PI * 1.05, Math.PI * 1.95); ctx.stroke() }
+    ctx.globalAlpha = 1
+  } else if (sh.kind === 'drop' || sh.kind === 'dive') {
+    const k = clamp(sh.t / .8, 0, 1), y = Y(sh.top + 9 * (1 - k) * (1 - k)), dx = sh.kind === 'dive' ? 7 * (1 - k) * (1 - k) * ss : 0
+    if (k < 1 && sh.t >= 0) { ctx.fillStyle = 'rgba(192,57,43,.25)'; ctx.beginPath(); ctx.ellipse(x, Y(sh.top), (.2 + .3 * k) * ss, .1 * ss, 0, 0, 7); ctx.fill() }
+    else if (sh.t < 0) { ctx.fillStyle = 'rgba(192,57,43,.12)'; ctx.beginPath(); ctx.ellipse(x, Y(sh.top), .2 * ss, .08 * ss, 0, 0, 7); ctx.fill(); return }
+    if (dx > 0) { ctx.strokeStyle = 'rgba(192,57,43,.3)'; ctx.lineWidth = 2; line(x + dx + .4 * ss, y - 1.4 * ss, x + dx + 1.4 * ss, y - 2.4 * ss) }
+    drawSharp(x + dx, y, ss)
+  } else if (sh.kind === 'rise' || sh.kind === 'claw' || sh.kind === 'pipes') {
+    const k = clamp((sh.t - .6) / .15, 0, 1)
+    if (sh.t < 0) return
+    if (k <= 0) { ctx.fillStyle = 'rgba(192,57,43,.5)'; for (let j = 0; j < 3; j++) { const ph = (sh.t * 2 + j / 3) % 1; ctx.beginPath(); ctx.arc(x + (j - 1) * .2 * ss, Y(sh.top - 1.6 + ph * 1.6), .08 * ss, 0, 7); ctx.fill() } }
+    else {
+      ctx.save(); ctx.beginPath(); ctx.rect(x - 1.5 * ss, 0, 3 * ss, Y(sh.top) + 1); ctx.clip()
+      const base = Y(sh.top - .9 * (1 - k))
+      if (sh.kind === 'claw') {
+        const o = Math.sin(t * 12) * .12
+        ctx.fillStyle = BOSS_COLOR.crab
+        for (const d of [-1, 1]) { ctx.beginPath(); ctx.ellipse(x + d * .14 * ss, base - .4 * ss, .13 * ss, .42 * ss, d * (.25 + o), 0, 7); ctx.fill() }
+        ctx.fillStyle = RED; ctx.beginPath(); ctx.arc(x, base - .05 * ss, .2 * ss, Math.PI, 0); ctx.fill()
+      } else if (sh.kind === 'pipes') {
+        for (const [d, h] of [[-.42, .55], [0, .75], [.42, .55]]) {
+          ctx.fillStyle = '#b8c0c8'; ctx.fillRect(x + (d - .14) * ss, base - h * ss, .28 * ss, h * ss)
+          ctx.fillStyle = RED; ctx.fillRect(x + (d - .14) * ss, base - h * ss, .28 * ss, .12 * ss)
+        }
+      } else drawSharp(x, base, ss)
+      ctx.restore()
+    }
+  }
+}
+function drawBossFight(X, Y, ss, th) {
+  for (const sh of run.shots) if (!sh.dead && sh.t >= -.6 && X(sh.x) > -40 && X(sh.x) < W + 40 + (sh.kind === 'dive' ? 8 * ss : 0)) drawShot(sh, X, Y, ss, run.t)
+  const b = run.boss, onGround = b.phase === 'tired' || b.phase === 'land'
+  if (b.phase === 'enter') return // the introduction shows him
+  // Off the screen to the right (a phone held upright): he peeks in at the edge, so you always see whom you fight.
+  const s = ss * (onGround ? 1 : 1.35), edge = W - .95 * s - 6
+  let x = X(b.x), y = Y(b.y)
+  if (x > edge) {
+    x = edge; y = clamp(y, 2.6 * s + SAFE_T + 40, H - 30)
+    ctx.globalAlpha = .92; drawBossBody(b, x, y, s * .8, run.t); ctx.globalAlpha = 1
+    ctx.fillStyle = BOSS_COLOR[b.id]; ctx.font = `800 ${Math.round(ss * .5)}px system-ui, sans-serif`; ctx.textAlign = 'center'
+    ctx.fillText('▶', W - 10, y - .6 * s)
+  } else drawBossBody(b, x, y, s, run.t)
+}
+// The introduction while he comes in: big, with his name and how he fights.
+function drawBossIntro(th) {
+  const b = run.boss, cfg = BOSSES[b.id], k = b.t, a = clamp(Math.min(k * 3, (3.2 - k) * 3), 0, 1)
+  if (a <= 0) return
+  const s = clamp(Math.min(W, H) * .16, 50, 120), cx = W / 2
+  ctx.globalAlpha = a * .9; ctx.fillStyle = '#fff'
+  const bw = Math.min(W - 24, 520), bh = s * 2.9 + 80, cy = clamp(H * .3, bh / 2 + SAFE_T + 60, H * .5) // above the notes on an upright phone
+  ctx.beginPath(); ctx.roundRect(cx - bw / 2, cy - bh / 2, bw, bh, 22); ctx.fill()
+  ctx.globalAlpha = a
+  drawBossBody(Object.assign({}, b, { phase: 'attack' }), cx, cy + s * .72, s * .8, run.t)
+  ctx.textAlign = 'center'; ctx.fillStyle = BOSS_COLOR[b.id]; ctx.font = `800 ${Math.round(clamp(s * .38, 20, 34))}px system-ui, sans-serif`
+  ctx.fillText('⚔ ' + T(cfg.name), cx, cy - bh / 2 + 34)
+  ctx.fillStyle = '#555'; ctx.font = `600 ${Math.round(clamp(s * .2, 13, 17))}px system-ui, sans-serif`
+  wrapText(T(cfg.tip), cx, cy + s * .72 + 26, bw - 40, clamp(s * .26, 17, 22))
+  if (k > .8) { ctx.fillStyle = '#999'; ctx.font = '600 13px system-ui, sans-serif'; ctx.fillText(T('Tap to start'), cx, cy + bh / 2 - 14) }
+  ctx.globalAlpha = 1; ctx.textAlign = 'left'
+}
+function wrapText(text, cx, y, maxW, lh) {
+  const words = text.split(' '), lines = []
+  let cur = ''
+  for (const w of words) { const t = cur ? cur + ' ' + w : w; if (ctx.measureText(t).width > maxW && cur) { lines.push(cur); cur = w } else cur = t }
+  if (cur) lines.push(cur)
+  lines.forEach((l, i) => ctx.fillText(l, cx, y + i * lh))
+}
+
+function drawPlayer(px, py, ss, th) {
+  if (run.invuln > 0 && Math.floor(run.invuln * 12) % 2) return
+  const duck = run.duck, sq = run.squash > 0 ? 1 - run.squash * 1.6 : 1
+  ctx.save(); ctx.translate(px, py); ctx.scale((duck ? 1.25 : 1) * (2 - sq), (duck ? .55 : 1) * sq)
+  const r = ss * .44
+  if (run.shield) { ctx.strokeStyle = th.acc; ctx.globalAlpha = .45; ctx.lineWidth = 3; ctx.beginPath(); ctx.arc(r * .3, -ss * 1.1, ss * 1.35, 0, 7); ctx.stroke(); ctx.globalAlpha = 1 }
+  ctx.strokeStyle = INK; ctx.lineWidth = Math.max(2, ss * .11); ctx.lineCap = 'round'
+  line(r * 1.1, -r * .8, r * 1.1, -ss * 2.3)
+  ctx.beginPath(); ctx.moveTo(r * 1.1, -ss * 2.3)
+  const flap = run.ground ? 0 : Math.sin(run.t * 30) * .15 * ss
+  ctx.bezierCurveTo(r * 1.3, -ss * 1.7, ss * 1.25, -ss * 1.65 + flap, ss * .95, -ss * .98 + flap); ctx.stroke()
+  if (run.power === 'dot' || run.airJump) { ctx.fillStyle = th.acc; ctx.beginPath(); ctx.arc(ss * 1.35, -ss * .5, ss * .14, 0, 7); ctx.fill() }
+  ctx.translate(0, -r * .95); ctx.rotate(-.35)
+  ctx.fillStyle = INK; ctx.beginPath(); ctx.ellipse(0, 0, r * 1.25, r * .92, 0, 0, Math.PI * 2); ctx.fill()
+  ctx.rotate(.35)
+  for (const ex of [-.2, .38]) {
+    ctx.fillStyle = '#fff'; ctx.beginPath(); ctx.arc(ex * r * 1.6, -r * .2, r * .26, 0, 7); ctx.fill()
+    ctx.fillStyle = INK; ctx.beginPath(); ctx.arc(ex * r * 1.6 + r * .08, -r * .2, r * .12, 0, 7); ctx.fill()
+  }
+  ctx.restore()
+}
+function drawSharp(x, base, ss) {
+  ctx.fillStyle = 'rgba(192,57,43,.14)'; ctx.beginPath(); ctx.arc(x, base - .4 * ss, .62 * ss, 0, 7); ctx.fill()
+  ctx.strokeStyle = RED; ctx.lineCap = 'butt'
+  ctx.lineWidth = Math.max(1.5, ss * .07)
+  line(x - .1 * ss, base, x - .1 * ss, base - .78 * ss); line(x + .1 * ss, base - .05 * ss, x + .1 * ss, base - .83 * ss)
+  ctx.lineWidth = Math.max(3, ss * .14)
+  line(x - .26 * ss, base - .3 * ss, x + .26 * ss, base - .42 * ss); line(x - .26 * ss, base - .55 * ss, x + .26 * ss, base - .67 * ss)
+}
+function drawCrawler(x, base, ss, t) {
+  const b = Math.abs(Math.sin(t * 9)) * .06 * ss
+  ctx.save(); ctx.translate(x, base - b)
+  ctx.strokeStyle = INK; ctx.lineWidth = Math.max(3, ss * .16); ctx.lineJoin = 'round'; ctx.lineCap = 'round'
+  ctx.beginPath(); ctx.moveTo(-.12 * ss, -.88 * ss); ctx.lineTo(.18 * ss, -.6 * ss); ctx.lineTo(-.1 * ss, -.4 * ss); ctx.lineTo(.16 * ss, -.18 * ss)
+  ctx.quadraticCurveTo(-.25 * ss, -.2 * ss, -.05 * ss, 0); ctx.stroke()
+  ctx.fillStyle = '#fff'; ctx.beginPath(); ctx.arc(-.02 * ss, -.66 * ss, .07 * ss, 0, 7); ctx.fill()
+  ctx.fillStyle = RED; ctx.beginPath(); ctx.arc(-.04 * ss, -.66 * ss, .035 * ss, 0, 7); ctx.fill()
+  ctx.restore()
+}
+function drawBird(x, y, ss, t) {
+  const f = Math.sin(t * 14) * .18 * ss
+  ctx.save(); ctx.translate(x, y)
+  ctx.strokeStyle = INK; ctx.fillStyle = INK; ctx.lineWidth = Math.max(2.5, ss * .1); ctx.lineCap = 'round'
+  ctx.beginPath(); ctx.arc(-.18 * ss, -.12 * ss, .15 * ss, 0, 7); ctx.fill()
+  ctx.beginPath(); ctx.moveTo(-.18 * ss, -.02 * ss); ctx.quadraticCurveTo(.1 * ss, .05 * ss, .28 * ss, -.2 * ss); ctx.lineTo(.02 * ss, .32 * ss); ctx.stroke()
+  ctx.lineWidth = Math.max(1.5, ss * .06)
+  ctx.beginPath(); ctx.moveTo(.05 * ss, -.05 * ss); ctx.quadraticCurveTo(.25 * ss, -.35 * ss - f, .5 * ss, -.15 * ss - f); ctx.stroke()
+  ctx.fillStyle = '#fff'; ctx.beginPath(); ctx.arc(-.22 * ss, -.15 * ss, .05 * ss, 0, 7); ctx.fill()
+  ctx.restore()
+}
+function drawBubble(x, y, ss, type, th) {
+  const r = ss * .55
+  ctx.fillStyle = 'rgba(255,255,255,.9)'; ctx.strokeStyle = th.acc; ctx.lineWidth = 2
+  ctx.beginPath(); ctx.arc(x, y, r, 0, 7); ctx.fill(); ctx.stroke()
+  ctx.fillStyle = th.acc; ctx.strokeStyle = th.acc; ctx.textAlign = 'center'
+  if (type === 'heart') { ctx.fillStyle = RED; ctx.font = `700 ${Math.round(r * 1.1)}px system-ui, sans-serif`; ctx.textBaseline = 'middle'; ctx.fillText('♥', x, y + r * .05); ctx.textBaseline = 'alphabetic' }
+  else if (type === 'dot') { ctx.beginPath(); ctx.arc(x, y, r * .25, 0, 7); ctx.fill() }
+  else if (type === 'ferm') { ctx.lineWidth = 2.5; ctx.beginPath(); ctx.arc(x, y + r * .25, r * .5, Math.PI, 0); ctx.stroke(); ctx.beginPath(); ctx.arc(x, y + r * .1, r * .12, 0, 7); ctx.fill() }
+  else if (type === 'slur') { ctx.lineWidth = 2.5; ctx.beginPath(); ctx.arc(x, y + r * .45, r * .6, Math.PI * 1.15, Math.PI * 1.85); ctx.stroke() }
+  else { ctx.font = `italic 700 ${Math.round(r * .62)}px Georgia, serif`; ctx.fillText(type === 'rit' ? 'rit.' : 'acc.', x, y + r * .22) }
+}
+const coarse = matchMedia('(pointer: coarse)').matches
+const POWER_LABEL = { dot: 'double jump', slur: 'magnet', rit: 'slow motion', accel: 'fast ×2' }
+function drawHud(ss, th) {
+  const sl = Math.max(16 + SAFE_L, coarse && W > H ? 34 : 16), st = SAFE_T
+  ctx.textAlign = 'left'; ctx.fillStyle = INK; ctx.font = '700 24px system-ui, sans-serif'
+  ctx.fillText(String(run.score), sl, st + 36)
+  ctx.font = '13px system-ui, sans-serif'; ctx.fillStyle = '#666'
+  ctx.fillText(endless ? T('Round {n}', { n: endless.round }) + ' · ' + L.song.title : L.song.title, sl, st + 55)
+  ctx.font = '18px system-ui, sans-serif'; ctx.fillStyle = th.acc
+  ctx.fillText('♥'.repeat(Math.max(0, run.lives)) + (run.shield ? '  𝄐' : ''), sl, st + 80)
+  let hy = st + 92
+  // Streak: a pill that grows with the multiplier and pulses when it goes up.
+  if (run.streak >= 2) {
+    const mult = 1 + Math.floor(run.streak / 8), sc = 1 + streakPulse * .5
+    const text = '🔥 ' + run.streak + (mult > 1 ? '  ×' + mult : '')
+    ctx.font = `700 ${Math.round((mult > 1 ? 16 : 13) * sc)}px system-ui, sans-serif`
+    const tw = ctx.measureText(text).width, ph = Math.round((mult > 1 ? 26 : 22) * sc)
+    ctx.fillStyle = mult > 1 ? th.acc : th.light
+    ctx.beginPath(); ctx.roundRect(sl - 2, hy, tw + 18, ph, ph / 2); ctx.fill()
+    ctx.fillStyle = mult > 1 ? '#fff' : INK; ctx.textBaseline = 'middle'; ctx.fillText(text, sl + 7, hy + ph / 2 + 1); ctx.textBaseline = 'alphabetic'
+    hy += ph + 8
+  }
+  if (run.power) {
+    ctx.fillStyle = th.acc; ctx.font = '600 13px system-ui, sans-serif'; ctx.fillText(T(POWER_LABEL[run.power]), sl, hy + 12)
+    ctx.fillStyle = '#e4e0d8'; ctx.fillRect(sl, hy + 18, 90, 4)
+    ctx.fillStyle = th.acc; ctx.fillRect(sl, hy + 18, 90 * clamp(run.powerT / (POWERS[run.power].bars * L.barSec), 0, 1), 4)
+  }
+  if (banner) {
+    const a = clamp(banner.t * 2, 0, 1), up = (1 - clamp(banner.t / 1.6, 0, 1)) * 10
+    ctx.globalAlpha = a; ctx.textAlign = 'center'; ctx.fillStyle = banner.grey ? '#999' : th.acc
+    ctx.font = `800 ${banner.grey ? 20 : 26}px system-ui, sans-serif`
+    ctx.fillText(banner.text, W / 2, H * .3 - up); ctx.globalAlpha = 1; ctx.textAlign = 'left'
+  }
+  if (run.boss && run.boss.phase === 'enter') drawBossIntro(th)
+  if (run.boss) {
+    const b = run.boss
+    ctx.textAlign = 'center'; ctx.font = '700 15px system-ui, sans-serif'; ctx.fillStyle = BOSS_COLOR[b.id]
+    ctx.fillText(T(BOSSES[b.id].name) + '   ' + '♥'.repeat(Math.max(0, b.lives)) + '♡'.repeat(Math.max(0, 3 - b.lives)), W / 2, st + 28)
+    ctx.textAlign = 'left'
+  } else {
+    const w = Math.min(240, W * .36)
+    ctx.fillStyle = '#e4e0d8'; ctx.fillRect(W / 2 - w / 2, st + 18, w, 6)
+    ctx.fillStyle = th.acc; ctx.fillRect(W / 2 - w / 2, st + 18, w * clamp((run.px - L.startX) / (L.winX - L.startX), 0, 1), 6)
+  }
+  // The duck zones at both edges (touch screens): hold there to duck.
+  if (coarse) {
+    const zw = 40, zh = Math.min(120, H * .3), zy = H * .62 - zh / 2
+    for (const zx of [SAFE_L + 8, W - 8 - zw - SAFE_L]) {
+      ctx.globalAlpha = run.duck ? .9 : .32; ctx.fillStyle = run.duck ? th.acc : '#fff'
+      ctx.beginPath(); ctx.roundRect(zx, zy, zw, zh, 20); ctx.fill()
+      ctx.strokeStyle = th.acc; ctx.lineWidth = 1.5; ctx.stroke()
+      ctx.fillStyle = run.duck ? '#fff' : th.acc; ctx.textAlign = 'center'; ctx.font = '700 20px system-ui, sans-serif'
+      ctx.fillText('▼', zx + zw / 2, zy + zh / 2 + 7)
+    }
+    ctx.globalAlpha = 1; ctx.textAlign = 'left'
+  }
+
+  // Lyrics line: what you have sung so far, and what comes next.
+  if (L.hasLyrics) {
+    const ly = L.lyricIdx
+    let lo = 0, hi = ly.length
+    while (lo < hi) { const m = (lo + hi) >> 1; if (L.items[ly[m]].x <= run.px) lo = m + 1; else hi = m }
+    const k = lo
+    const shown = ly.slice(Math.max(0, k - 7), k + 4)
+    const font = `italic 600 ${Math.round(clamp(ss * .48, 13, 20))}px Georgia, serif`
+    ctx.font = font
+    if (L.lyFont !== font) { L.lyFont = font; L.lyW = {} }
+    const parts_ = shown.map((i) => {
+      const t = L.items[i].text
+      if (L.lyW[i] == null) L.lyW[i] = ctx.measureText(t.endsWith('-') ? t.slice(0, -1) : t + ' ').width
+      return { i, t, w: L.lyW[i] }
+    })
+    const total = parts_.reduce((s, p) => s + p.w, 0), mg = Math.max(20, sl)
+    let x = W / 2 - total / 2
+    if (total > W - 2 * mg) { // too long: keep the syllable you are at in view
+      let cur = 0
+      for (const p of parts_) { if (L.items[p.i].x > run.px) break; cur += p.w }
+      x = clamp(W * .55 - cur, W - mg - total, mg)
+    }
+    ctx.textAlign = 'left'
+    for (const p of parts_) {
+      const it = L.items[p.i]
+      ctx.fillStyle = run.taken[p.i] ? th.acc : it.x < run.px ? '#d4a0a0' : '#aaa'
+      ctx.fillText(p.t.endsWith('-') ? p.t.slice(0, -1) : p.t, x, H - 22 - SAFE_B)
+      x += p.w
+    }
+  }
+  if (ac && !live() && run.t > 1) {
+    ctx.textAlign = 'right'; ctx.fillStyle = '#999'; ctx.font = '600 13px system-ui, sans-serif'
+    ctx.fillText(T('🔇 no sound – tap to turn it on'), W - 70 - SAFE_L, st + 36)
+  }
+  if (run.hold > 0) {
+    ctx.textAlign = 'center'; ctx.fillStyle = th.acc; ctx.font = '700 26px system-ui, sans-serif'
+    ctx.fillText(run.hold > .45 ? (endless && endless.banner ? endless.banner : T('Get ready…')) : T('Go!'), W / 2, H * .22)
+  }
+  if (run.t < .01 && !run.done && !(endless && endless.round > 1) && !run.boss) {
+    ctx.textAlign = 'center'; ctx.fillStyle = INK; ctx.font = '700 22px system-ui, sans-serif'
+    ctx.fillText(T('Tap to jump · hold for higher'), W / 2, H * .2)
+    if (coarse && !run.boss) { ctx.font = '600 16px system-ui, sans-serif'; ctx.fillStyle = '#666'; ctx.fillText(T('Hold the left or right edge to duck'), W / 2, H * .2 + 26) }
+  }
+}
+function idleStaff() {
+  ctx.strokeStyle = 'rgba(29,29,31,.18)'; ctx.lineWidth = 1.2
+  for (let i = 0; i < 5; i++) { const y = H * .5 + (i - 2) * 22; line(0, y, W, y) }
+}
+
+// ---------- Menus ----------
+const songSel = $('song'), partSel = $('part')
+let loaded = null // { score }
+let diff = store.get('mh:diff') || 'normal'
+let verse = 1
+const esc = (t) => String(t).replace(/[&<>"]/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' })[c])
+const parseJson = (t) => { try { return JSON.parse(t || 'null') } catch (e) { return null } }
+// In the app the songs come from the library (the app sends their titles, then each file on request).
+const APP = window.parent !== window && /[?&]app=1/.test(location.search)
+const toApp = (m) => { if (APP) window.parent.postMessage(Object.assign({ mh: '' }, m), '*') }
+let lib = [] // [{ id, title }]
+const libCache = new Map() // id -> score, or Error
+let libWaiting = null
+const isLib = () => songSel.value.startsWith('lib:')
+const isEndless = () => songSel.value.startsWith('endless:')
+const isBoss = () => songSel.value.startsWith('boss:')
+let bossRun = null // { id, base } while fighting a boss
+let groupName = '', groupSong = '' // the group's score the game was opened with (its choir challenge)
+let board = null, boardAsked = false, boardErr = false, pendingRank = null // the group's leaderboard for that score (from the app)
+const isGroupSong = () => !!groupName && songSel.value === 'lib:' + groupSong && isFile()
+const isFile = () => (songSel.value === 'file' || isLib()) && !!loaded && loaded.key === songSel.value
+const songKey = () => (isLib() ? 'l:' + songSel.value.slice(4) : isFile() ? 'f:' + loaded.score.title : songSel.value)
+const partKey = () => (isFile() ? partSel.value : '-')
+const bestKeyFor = (part, d, v) => `mh:best:${songKey()}|${part}:${d}:v${v}`
+const bestOf = (part, d, v) => parseJson(store.get(bestKeyFor(part, d, v)))
+const bestKey = () => bestKeyFor(partKey(), diff, verse)
+
+// The search field above the list: only matching songs are listed (letters, not accents or case).
+const fold = (t) => String(t).normalize('NFD').replace(/[\u0300-\u036f]/g, '').toLowerCase()
+function refreshSongs(selectLoaded) {
+  const q = fold($('songSearch').value.trim()), match = (t) => !q || fold(t).includes(q)
+  songSel.innerHTML = ''
+  const group = (label, list) => {
+    const keep = list.filter(([t]) => match(t))
+    if (!keep.length) return
+    const g = document.createElement('optgroup'); g.label = label
+    for (const [t, v] of keep) g.appendChild(new Option(t, v))
+    songSel.appendChild(g)
+  }
+  if (lib.length) group(T('Your library'), lib.map((x) => [x.title, 'lib:' + x.id]))
+  for (const [cat, label] of CATS) group(T(label), BUILTIN.filter((b) => b.cat === cat).map((b) => [b.title, 'b:' + b.id]))
+  if (testMode()) group('⚔ ' + T('Boss fights'), BOSS_IDS.map((id) => ['⚔ ' + T(BOSSES[id].name), 'boss:' + id])) // the developer's test list only
+  group(T('Endless'), [['∞ ' + T('Endless – classics'), 'endless:classics']].concat(lib.length >= 2 ? [['∞ ' + T('Endless – my library'), 'endless:lib']] : []))
+  if (loaded && loaded.key === 'file' && match(loaded.score.title)) songSel.add(new Option('📄 ' + loaded.score.title, 'file'))
+  if (!songSel.options.length) { // nothing found
+    const o = new Option(T('No songs found'), ''); o.disabled = true; songSel.add(o); songSel.value = ''
+    $('playBtn').disabled = true; $('partRow').hidden = true; $('verseRow').hidden = true; $('choir').hidden = true; $('board').hidden = true
+    return
+  }
+  const want = selectLoaded && loaded ? 'file' : (store.get('mh:song') || 'b:ode')
+  songSel.value = want
+  if (!songSel.value) { songSel.value = songSel.options[0].value; if (q) store.set('mh:song', songSel.value) } // the first match
+  refreshParts()
+}
+let libOrder = null
+function refreshParts() {
+  if (songSel.value === 'endless:lib') {
+    if (!libOrder) libOrder = shuffled(lib.map((x) => x.id))
+    while (libOrder.length > 1 && libCache.get(libOrder[0]) instanceof Error) libOrder.push(libOrder.shift())
+    const first = libCache.get(libOrder[0]), msg = $('loadMsg')
+    if (!first) { msg.className = 'msg'; msg.textContent = T('Loading…'); if (libWaiting !== libOrder[0]) { libWaiting = libOrder[0]; toApp({ mh: 'get', id: libOrder[0] }) } }
+    else if (msg.textContent === T('Loading…')) msg.textContent = ''
+    $('playBtn').disabled = !first
+    $('partRow').hidden = true
+    refreshVerses()
+    return
+  }
+  if (isLib()) {
+    const id = songSel.value.slice(4), got = libCache.get(id), msg = $('loadMsg')
+    if (got instanceof Error) { loaded = null; msg.className = 'msg err'; msg.textContent = got.message }
+    else if (got) { if (!loaded || loaded.key !== songSel.value) loaded = { score: got, key: songSel.value }; msg.className = 'msg'; msg.textContent = '' }
+    else { loaded = null; msg.className = 'msg'; msg.textContent = T('Loading…'); if (libWaiting !== id) { libWaiting = id; toApp({ mh: 'get', id }) } }
+    $('playBtn').disabled = !got || got instanceof Error
+  } else $('playBtn').disabled = false
+  $('partRow').hidden = !(isFile() && loaded.score.parts.length > 1)
+  if (isFile()) {
+    partSel.innerHTML = ''
+    for (const p of loaded.score.parts) partSel.add(new Option(p.name + (p.lyrics ? ' ' + T('(lyrics)') : ''), p.id))
+    const saved = store.get('mh:part'), want = (startPart || '').toLowerCase()
+    const wanted = want && loaded.score.parts.find((p) => p.name.toLowerCase() === want || p.base.toLowerCase() === want || p.name.toLowerCase().startsWith(want))
+    partSel.value = wanted ? wanted.id : saved && loaded.score.parts.some((p) => p.id === saved) ? saved : defaultPart(loaded.score)
+    if (wanted) { startPart = ''; store.set('mh:part', partSel.value) }
+  }
+  refreshVerses()
+}
+function selectedSong() {
+  if (isFile()) return songFromScore(loaded.score, partSel.value)
+  if (isLib()) throw new Error($('loadMsg').textContent || T('Loading…'))
+  if (isEndless()) return songFromTokens(BUILTIN.find((x) => x.id === ENDLESS[0]))
+  if (isBoss()) return bossTestSong(songSel.value.slice(5))
+  const b = BUILTIN.find((x) => 'b:' + x.id === songSel.value) || BUILTIN[0]
+  return songFromTokens(b)
+}
+// Verse buttons: verse N opens once verse N-1 was won on this difficulty.
+function refreshVerses() {
+  let song = null
+  try { song = selectedSong() } catch (e) { song = null }
+  if (song && song.lyricsFrom && isFile()) { $('loadMsg').className = 'msg'; $('loadMsg').textContent = T('Lyrics from {p}', { p: song.lyricsFrom }) }
+  else if (isFile() && $('loadMsg').textContent.startsWith(T('Lyrics from {p}', { p: '' }))) $('loadMsg').textContent = ''
+  const vs = song && song.verses.length > 1 && !isEndless() && !isBoss() ? song.verses : []
+  const open = (k) => k === 0 || ((bestOf(partKey(), diff, vs[k - 1]) || {}).stars || 0) > 0
+  if (!vs.includes(verse) || !open(vs.indexOf(verse))) verse = vs[0] || 1
+  $('verseRow').hidden = !vs.length
+  const box = $('verses')
+  box.innerHTML = ''
+  vs.forEach((v, k) => {
+    const b = document.createElement('button')
+    b.textContent = open(k) ? String(v) : '🔒 ' + v
+    b.disabled = !open(k)
+    b.classList.toggle('on', v === verse)
+    b.onclick = () => { verse = v; refreshVerses() }
+    box.appendChild(b)
+  })
+  showBest(); showChoir(); showBoard()
+}
+// The group's leaderboard: everyone's best for the chosen difficulty (and the boss fight).
+function showBoard() {
+  const box = $('board')
+  box.hidden = !APP || !isGroupSong()
+  if (box.hidden) return
+  if (!board && !boardAsked) { boardAsked = true; toApp({ mh: 'board', id: groupSong }) }
+  const rows = (d) => (board || []).filter((x) => x.diff === d).sort((a, b) => b.points - a.points).slice(0, 10)
+  const list = (rs) => rs.map((x, i) => `<div class="boardRow${x.me ? ' me' : ''}"><span class="rk">${i + 1}.</span><span>${esc(x.name)} <span class="pt">${esc(x.part)}</span></span>` +
+    `<span class="st" style="color:#f2b33d">${'★'.repeat(x.stars)}</span><span class="sc">${x.points}</span></div>`).join('')
+  const mine = rows(diff), boss = rows('boss')
+  box.innerHTML = `<div class="choirHead">🏆 ${esc(T('Leaderboard'))} · ${esc(groupName)} · ${esc(T(DIFFS[diff].label))}</div>` +
+    (!board ? `<div class="msg">${esc(boardErr ? T('The leaderboard needs an internet connection.') : T('Loading…'))}</div>` : mine.length ? list(mine) : `<div class="msg">${esc(T('No results yet – be the first!'))}</div>`) +
+    (boss.length ? `<div class="boardSub">⚔ ${esc(T('Boss fights'))}</div>` + list(boss) : '')
+}
+// After a game on the group's score: the result goes to the group (the app keeps everyone's best).
+function sendResult(d, points, stars) {
+  if (!APP || !groupName || !loaded || loaded.key !== 'lib:' + groupSong || points <= 0) return
+  const part = (loaded.score.parts.find((x) => x.id === partSel.value) || {}).name || ''
+  pendingRank = { diff: d, part }
+  toApp({ mh: 'result', id: groupSong, part, diff: d, points, stars })
+}
+function showRank() {
+  if (!pendingRank || !board || $('end').classList.contains('hidden')) return
+  const rs = board.filter((x) => x.diff === pendingRank.diff).sort((a, b) => b.points - a.points)
+  const k = rs.findIndex((x) => x.me && x.part === pendingRank.part)
+  pendingRank = null
+  if (k < 0) return
+  const el = document.createElement('div')
+  el.className = 'msg'; el.style.marginTop = '6px'; el.style.fontWeight = '700'; el.style.color = '#5b4bdb'
+  el.textContent = '🏆 ' + T('Rank {n} of {m} in {g}', { n: k + 1, m: rs.length, g: groupName })
+  $('endText').appendChild(el)
+}
+const bossKey = (id) => `mh:boss:${id}:${diff}`
+function showBest() {
+  if (isBoss()) { const b = parseJson(store.get(bossKey(songSel.value.slice(5)))); $('bestLine').textContent = b ? T('Best: {s}', { s: b.score }) + ` · ${'★'.repeat(b.stars)}${'☆'.repeat(3 - b.stars)}` : ''; return }
+  const b = parseJson(store.get(bestKey()))
+  $('bestLine').textContent = !b ? '' : isEndless() ? T('Best: {s} · round {r}', { s: b.score, r: b.round || 1 }) : T('Best: {s}', { s: b.score }) + ` · ${'★'.repeat(b.stars)}${'☆'.repeat(3 - b.stars)}`
+}
+// Choir challenge: every sung part of a file is a level; the stars of all parts add up.
+function choirParts() {
+  if (!isFile() || !groupName || songSel.value !== 'lib:' + groupSong) return []
+  const sung = loaded.score.parts.filter((p) => p.vocal || p.lyrics > 0)
+  return sung.length >= 2 ? sung.slice(0, 8) : []
+}
+function partStars(pid) {
+  let best = 0
+  for (let v = 1; v <= 8; v++) best = Math.max(best, ((bestOf(pid, diff, v) || {}).stars) || 0)
+  return best
+}
+function choirTotal() { const ps = choirParts(); return { got: ps.reduce((s, p) => s + partStars(p.id), 0), max: ps.length * 3, n: ps.length } }
+function showChoir() {
+  const ps = choirParts(), box = $('choir')
+  box.hidden = ps.length < 2
+  if (box.hidden) return
+  const t = choirTotal()
+  box.innerHTML = `<div class="choirHead">${esc(T('Choir challenge'))} · ${esc(groupName)} · ${t.got} / ${t.max} ★</div>` + ps.map((p) => {
+    const st = partStars(p.id)
+    return `<button class="choirRow${p.id === partSel.value ? ' on' : ''}" data-p="${esc(p.id)}"><span>${esc(p.name)}</span>` +
+      `<span class="st">${'★'.repeat(st)}<span class="off">${'★'.repeat(3 - st)}</span></span></button>`
+  }).join('')
+  for (const b of box.querySelectorAll('button')) b.onclick = () => { partSel.value = b.dataset.p; store.set('mh:part', partSel.value); refreshVerses() }
+}
+function setDiff(d) {
+  diff = d; store.set('mh:diff', d)
+  for (const b of $('diff').children) b.classList.toggle('on', b.dataset.d === d)
+  refreshVerses()
+}
+for (const b of $('diff').children) b.onclick = () => setDiff(b.dataset.d)
+songSel.onchange = () => { store.set('mh:song', songSel.value); refreshParts() }
+// Test mode (the developer's own device): seven quick taps on the title switch the boss list on or off.
+function testMode() { return store.get('mh:test') === '1' }
+{
+  let n = 0, timer = 0
+  $('title').addEventListener('click', () => {
+    clearTimeout(timer); timer = setTimeout(() => { n = 0 }, 1500)
+    if (++n < 7) return
+    n = 0
+    store.set('mh:test', testMode() ? '0' : '1')
+    if (!testMode() && isBoss()) store.set('mh:song', 'b:ode')
+    refreshSongs(false)
+    const msg = $('loadMsg'); msg.className = 'msg'; msg.textContent = testMode() ? '⚔ Test mode on: boss list shown' : 'Test mode off'
+  })
+}
+$('songSearch').oninput = () => refreshSongs(false)
+partSel.onchange = () => { store.set('mh:part', partSel.value); refreshVerses() }
+
+async function loadFile(file) {
+  const msg = $('loadMsg')
+  msg.className = 'msg'; msg.textContent = T('Reading…')
+  try {
+    const buf = await file.arrayBuffer()
+    const u8 = new Uint8Array(buf)
+    const text = u8[0] === 0x50 && u8[1] === 0x4b ? await unzipMusicXML(buf) : new TextDecoder().decode(u8)
+    const score = parseSongText(text, file.name)
+    songFromScore(score, defaultPart(score)) // validates
+    loaded = { score, key: 'file' }
+    // Keep the file for next time (a .smc without its embedded source PDF).
+    store.set('mh:xml', score.kind === 'smc' ? JSON.stringify({ format: 'sheetmusic-creator', version: 1, score: score.smc }) : text)
+    store.set('mh:xmlName', file.name)
+    store.set('mh:song', 'file'); store.set('mh:part', '')
+    refreshSongs(true)
+    msg.textContent = T('Loaded "{t}" · {n} parts', { t: score.title, n: score.parts.length })
+  } catch (err) {
+    msg.className = 'msg err'; msg.textContent = err.message || String(err)
+  }
+}
+$('loadBtn').onclick = () => $('file').click()
+$('file').onchange = (e) => { const f = e.target.files[0]; if (f) loadFile(f); e.target.value = '' }
+
+function show(id, on) { $(id).classList.toggle('hidden', !on) }
+function startGame(boss) {
+  audio()
+  let song
+  try { song = selectedSong() } catch (err) { $('loadMsg').className = 'msg err'; $('loadMsg').textContent = err.message; return }
+  if (!boss && isBoss()) boss = { id: songSel.value.slice(5), base: song }
+  bossRun = boss || null
+  if (bossRun) song = bossSong(bossRun.base)
+  current = song
+  stopSong()
+  endless = null; banner = null; preTones.clear(); rang.clear()
+  if (isEndless()) {
+    const fromLib = songSel.value === 'endless:lib'
+    endless = { lib: fromLib, round: 1, order: fromLib ? (libOrder || shuffled(lib.map((x) => x.id))).slice() : ENDLESS.slice(), banner: '' }
+    if (fromLib) libOrder = null // a new order next time
+    song = roundSong(1)
+  }
+  L = buildLevel(song, diff, endless ? roundOpts(1) : bossRun ? { boss: bossRun.id } : { verse })
+  run = newRun(L)
+  if (bossRun && bossRun.lives > 0) run.lives = bossRun.lives // the lives you finished the song with
+  run.lead = Math.min(.25, Math.max(0, outLatency() - NOTE_DELAY) + 1 / 60 + .01)
+  camY = run.y; themeIdx = 0; parts = []; acc = 0
+  if (endless) prefetchRound(2)
+  playing = true; paused = false
+  show('menu', false); show('end', false); show('pause', false); show('topBtns', true)
+  input.pointers.clear(); input.duckers.clear(); input.keyJump = input.keyDuck = false; syncInput()
+}
+// ---------- Endless mode ----------
+function shuffled(a) { const r = a.slice(); for (let i = r.length - 1; i > 0; i--) { const j = Math.floor(Math.random() * (i + 1)); [r[i], r[j]] = [r[j], r[i]] } return r }
+function roundOpts(round) { return { targetAdd: Math.min(2, Math.floor((round - 1) / 2)), speedMul: Math.min(1.2, 1 + .025 * (round - 1)) } }
+function baseOfRound(round) {
+  const id = endless.order[(round - 1) % endless.order.length]
+  if (!endless.lib) { const b = BUILTIN.find((x) => x.id === id); return { song: songFromTokens(b), tonic: b.tonic, minor: !!b.minor } }
+  const got = libCache.get(id)
+  if (got && !(got instanceof Error)) { try { return { song: songFromScore(got, defaultPart(got)), tonic: null, minor: false } } catch (e) { /* skip */ } }
+  // Not loaded (yet) or no melody: a classic stands in.
+  const b = BUILTIN.find((x) => x.id === ENDLESS[(round - 1) % ENDLESS.length])
+  return { song: songFromTokens(b), tonic: b.tonic, minor: !!b.minor }
+}
+function roundSong(round) { const b = baseOfRound(round); return endlessSong(b.song, round, b.tonic, b.minor) }
+function prefetchRound(round) {
+  if (!endless || !endless.lib) return
+  const id = endless.order[(round - 1) % endless.order.length]
+  if (!libCache.has(id) && libWaiting !== id) { libWaiting = id; toApp({ mh: 'get', id }) }
+}
+function nextRound() {
+  // After the whole list (and before it starts again): a random boss fight, on the last song.
+  if (!endless.inBoss && endless.round % endless.order.length === 0) {
+    const id = BOSS_IDS[Math.floor(Math.random() * BOSS_IDS.length)], carry = run
+    endless.inBoss = id
+    L = buildLevel(bossSong(current), diff, { boss: id })
+    run = newRun(L, carry)
+    camY = run.y; parts = []; banner = { text: '⚔ ' + T('Boss fight!'), t: 1.6 }
+    return
+  }
+  endless.inBoss = false
+  const round = endless.round + 1, song = roundSong(round)
+  endless.round = round
+  endless.banner = T('Round {n} · {key} · faster!', { n: round, key: song.keyName })
+  const carry = run
+  L = buildLevel(song, diff, roundOpts(round))
+  run = newRun(L, carry)
+  run.hold = 1.8; current = song
+  themeIdx = (round - 1) % THEMES.length
+  L.themes = [{ x: -1e9, i: themeIdx }]
+  camY = run.y; parts = []; banner = null
+  prefetchRound(round + 1)
+}
+
+// Boss test list: each boss with a song that fits him (lower voices: a melody two octaves down).
+function bossTestSong(id) {
+  const pick = { diva: 'jingle', conductor: 'silent', tuba: 'auld', crab: 'saints', metronome: 'mountain', organ: 'ocome' }[id] || 'ode'
+  const s = songFromTokens(BUILTIN.find((x) => x.id === pick))
+  if (id === 'tuba' || id === 'crab') { s.notes = s.notes.map((n) => Object.assign({}, n, { midi: n.midi - 24, dia: n.dia - 14 })); s.kind = 'low' }
+  return s
+}
+function toMenu() {
+  stopSong(); bossRun = null
+  playing = false; paused = false; L = null; run = null
+  show('menu', true); show('end', false); show('pause', false); show('topBtns', false)
+  refreshVerses()
+}
+function pause() {
+  if (!playing || paused) return
+  paused = true; $('pauseSong').textContent = (bossRun ? T(BOSSES[bossRun.id].name) + ' · ' : '') + (endless ? T('Round {n}', { n: endless.round }) + ' · ' : '') + L.song.title + (!endless && L.song.verses.length > 1 ? ' · ' + T('verse {n}', { n: L.verse }) : '') + ' · ' + T(DIFFS[diff].label); show('pause', true)
+}
+function resume() { audio(); paused = false; acc = 0; show('pause', false); input.pointers.clear(); input.duckers.clear(); syncInput() }
+function showEnd() {
+  if (!run) return
+  if (bossRun) return showBossEnd()
+  const stars = endless ? 0 : starsOf(L, run)
+  const prev = parseJson(store.get(bestKey()))
+  const isBest = !prev || run.score > prev.score
+  if (isBest || stars > (prev ? prev.stars : 0)) store.set(bestKey(), JSON.stringify({ score: Math.max(run.score, prev ? prev.score : 0), stars: Math.max(stars, prev ? prev.stars : 0), round: endless ? Math.max(endless.round, (prev && prev.round) || 0) : undefined }))
+  $('endTitle').textContent = endless ? T('Endless: round {n}', { n: endless.round }) : run.win ? (stars === 3 ? T('Bravo!') : T('You made it!')) : T('Game over')
+  $('endStars').innerHTML = endless ? '' : [0, 1, 2].map((i) => `<span class="${i < stars ? '' : 'off'}">★</span>`).join('')
+  const best = isBest && run.score > 0 ? ' · ' + T('new best!') : ' · ' + T('best {n}', { n: prev ? prev.score : 0 })
+  $('endText').innerHTML = `${esc(T('Score'))} <b>${run.score}</b>${esc(best)}<br>` + esc(
+    (endless ? T('{n} rounds', { n: endless.round - (run.win ? 0 : 1) }) : T('{a} of {b} notes', { a: run.hits, b: L.noteCount }) + ' · ' + T('{a} of {b} syllables & coins', { a: run.items, b: L.items.length })) +
+    ' · ' + T('best streak {n}', { n: run.bestStreak }) +
+    (run.stomps ? ' · ' + T('{n} stomped', { n: run.stomps }) : '') + (run.damage ? ' · ' + T('{n} hits', { n: run.damage }) : ' · ' + T('no damage!')))
+  const vs = L.song.verses.length > 1 ? L.song.verses : []
+  const next = vs[vs.indexOf(L.verse) + 1]
+  const enc = $('encoreBtn')
+  enc.classList.toggle('hidden', !(run.win && next) || !!endless)
+  enc.textContent = next ? T('Encore: verse {n} ▶ (a bit faster)', { n: next }) : ''
+  enc.onclick = () => { verse = next; startGame() }
+  enc.classList.add('primary')
+  $('againBtn').classList.toggle('primary', !(run.win && next))
+  const ct = choirTotal()
+  if (ct.n >= 2 && !endless) $('endText').innerHTML += `<br>${esc(T('Choir challenge'))}: ${ct.got} / ${ct.max} ★`
+  // Won on Hard: the song's boss is waiting.
+  const bossId = bossFor(L.song), bb = $('bossBtn')
+  bb.classList.toggle('hidden', !(run.win && diff === 'hard' && !endless))
+  bb.textContent = T('⚔ Boss fight: {b} ▶', { b: T(BOSSES[bossId].name) })
+  const base = current, group = isGroupSong()
+  bb.onclick = () => startGame({ id: bossId, base, group })
+  if (run.win && diff !== 'hard' && !endless) $('endText').innerHTML += `<br><span style="color:#999">${esc(T('Win on Hard and the boss is waiting: {b}', { b: T(BOSSES[bossId].name) }))}</span>`
+  if (run.win && diff === 'hard' && !endless) { $('againBtn').classList.remove('primary'); enc.classList.remove('primary') }
+  if (!endless) sendResult(diff, run.score, stars)
+  if (run.win && diff === 'hard' && !endless) { startGame({ id: bossId, base, group, lives: run.lives }); return } // straight into the boss fight
+  show('topBtns', false); show('end', true)
+  if (run.win) playSong(L.song) // stops as soon as you go on
+}
+function showBossEnd() {
+  const b = run.boss, won = run.win
+  const stars = !won ? 0 : run.damage === 0 ? 3 : run.damage <= 2 ? 2 : 1
+  const prev = parseJson(store.get(bossKey(b.id)))
+  const isBest = !prev || run.score > prev.score
+  if (isBest || stars > (prev ? prev.stars : 0)) store.set(bossKey(b.id), JSON.stringify({ score: Math.max(run.score, prev ? prev.score : 0), stars: Math.max(stars, prev ? prev.stars : 0) }))
+  $('endTitle').textContent = won ? T('Boss defeated!') : run.lives <= 0 ? T('The boss won') : T('The boss got away')
+  $('endStars').innerHTML = [0, 1, 2].map((i) => `<span class="${i < stars ? '' : 'off'}">★</span>`).join('')
+  $('endText').innerHTML = `${esc(T(BOSSES[b.id].name))} · ${esc(T('Score'))} <b>${run.score}</b>${esc(isBest && run.score > 0 ? ' · ' + T('new best!') : ' · ' + T('best {n}', { n: prev ? prev.score : 0 }))}<br>` +
+    esc(T('{n} of 3 boss hits', { n: 3 - b.lives }) + (run.damage ? ' · ' + T('{n} hits', { n: run.damage }) : ' · ' + T('no damage!')))
+  $('encoreBtn').classList.add('hidden'); $('bossBtn').classList.add('hidden'); $('againBtn').classList.add('primary')
+  show('topBtns', false); show('end', true)
+  if (bossRun.group) sendResult('boss', run.score, stars)
+}
+$('playBtn').onclick = () => startGame()
+$('againBtn').onclick = () => startGame(bossRun || undefined)
+$('restartBtn').onclick = () => startGame(bossRun || undefined)
+$('eMenuBtn').onclick = toMenu
+$('pMenuBtn').onclick = toMenu
+$('resumeBtn').onclick = resume
+$('pauseBtn').onclick = pause
+$('listenBtn').onclick = () => { if (songBus) stopSong(); else if (current) playSong(current) }
+const fsOk = document.documentElement.requestFullscreen || document.documentElement.webkitRequestFullscreen
+if (!fsOk) $('fsBtn').classList.add('hidden')
+$('fsBtn').onclick = () => {
+  const el = document.documentElement
+  if (document.fullscreenElement || document.webkitFullscreenElement) (document.exitFullscreen || document.webkitExitFullscreen).call(document)
+  else { try { const r = (el.requestFullscreen || el.webkitRequestFullscreen).call(el); if (r && r.catch) r.catch(() => {}) } catch (e) {} }
+}
+
+// ---------- Input ----------
+for (const t of ['pointerdown', 'touchend', 'click', 'keydown']) addEventListener(t, () => { if (!live()) audio() }, true)
+cv.addEventListener('pointerdown', (e) => {
+  if (!playing || paused) return
+  e.preventDefault()
+  if (inDuckZone(e.clientX) && e.pointerType !== 'mouse') input.duckers.add(e.pointerId); else input.pointers.add(e.pointerId)
+  syncInput()
+})
+const up = (e) => { const a = input.pointers.delete(e.pointerId), b = input.duckers.delete(e.pointerId); if (a || b) syncInput() }
+addEventListener('pointerup', up)
+addEventListener('pointercancel', up)
+addEventListener('keydown', (e) => {
+  if (e.key === 'Escape' || e.key === 'p') { if (playing) (paused ? resume() : pause()); return }
+  if (!playing || paused) { if (e.key === 'Enter' && !$('menu').classList.contains('hidden')) startGame(); return }
+  if ([' ', 'ArrowUp', 'ArrowDown', 'w', 's'].includes(e.key)) e.preventDefault()
+  if (e.key === ' ' || e.key === 'ArrowUp' || e.key === 'w') input.keyJump = true
+  if (e.key === 'ArrowDown' || e.key === 's') input.keyDuck = true
+  syncInput()
+})
+addEventListener('keyup', (e) => {
+  if (e.key === ' ' || e.key === 'ArrowUp' || e.key === 'w') input.keyJump = false
+  if (e.key === 'ArrowDown' || e.key === 's') input.keyDuck = false
+  syncInput()
+})
+document.addEventListener('visibilitychange', () => { if (document.hidden) { pause(); stopSong(); closeAudio() } })
+addEventListener('blur', () => pause())
+addEventListener('contextmenu', (e) => e.preventDefault())
+
+// ---------- Texts ----------
+const HOWTO = {
+  en: `<b>Tap</b> (or Space) to jump, <b>hold</b> for a higher jump. To duck, <b>hold the left or right edge</b> of the screen (▼, or ↓) – with one thumb, while the other one jumps.<br>
+    Every note you land on sounds, so a clean run plays the song. Rest stones are silent.<br>
+    <b>Enemies:</b> jump on any of them to stomp it: walking quarter rests, flying eighth rests and red sharps ♯. Running into them hurts. You can also duck under the flying rests. Watch for cracks and staccato notes that crumble.<br>
+    <b>Points:</b> every note 10 (×2 after 8 in a row, ×3 after 16 …), syllable or coin 5, bubble 15, stomp 25. Missing a note or getting hit ends the streak.<br>
+    <b>Bubbles:</b> • double jump · 𝄐 shield · <i>rit.</i> slow motion · ⌒ magnet · <i>acc.</i> faster with double points.<br>
+    Falling sends you back a bit, with a moment to get ready; fall twice at the same spot and you get a shield.<br>
+    <b>Verses:</b> win verse 1 to unlock verse 2 (a bit faster), and so on. <b>Choir challenge:</b> with a choir score, collect the stars of every voice part.<br>
+    <b>Endless:</b> one song after another, each round in a new key, sometimes in minor, and a bit faster. How far do you get?<br>
+    <b>Bosses:</b> win a song on Hard and its boss is waiting. He attacks from the right; when he gets tired he lands on a note – jump on him! Three hits and he is beaten – but every hit makes him angrier. You keep the lives you finished the song with, and a heart waits at the start: +1 life. Upper voices are attacked from above, lower voices from below; the bosses of fast songs make the song faster. In a group, everyone's best results are on the group's leaderboard.`,
+  de: `<b>Tippen</b> (oder Leertaste) zum Springen, <b>halten</b> für einen höheren Sprung. Zum Ducken <b>den linken oder rechten Rand halten</b> (▼, oder ↓) – mit einem Daumen, während der andere springt.<br>
+    Jede Note, auf der du landest, erklingt, ein sauberer Lauf spielt also das Lied. Pausensteine sind still.<br>
+    <b>Gegner:</b> Spring auf jeden drauf, um ihn zu besiegen: laufende Viertelpausen, fliegende Achtelpausen und rote Kreuze ♯. Läufst du hinein, tut es weh. Unter fliegenden Pausen kannst du dich auch ducken. Achte auf Risse und Staccato-Noten, die zerbröseln.<br>
+    <b>Punkte:</b> jede Note 10 (×2 nach 8 in Folge, ×3 nach 16 …), Silbe oder Münze 5, Blase 15, Gegner 25. Eine verpasste Note oder ein Treffer beendet die Serie.<br>
+    <b>Blasen:</b> • Doppelsprung · 𝄐 Schutzschild · <i>rit.</i> Zeitlupe · ⌒ Magnet · <i>acc.</i> schneller mit doppelten Punkten.<br>
+    Fällst du, geht es ein Stück zurück, mit einem Moment zum Bereitmachen; fällst du zweimal an derselben Stelle, bekommst du ein Schutzschild.<br>
+    <b>Strophen:</b> Gewinne Strophe 1, um Strophe 2 (etwas schneller) freizuschalten, und so weiter. <b>Chor-Challenge:</b> Sammle bei Chornoten die Sterne aller Stimmen.<br>
+    <b>Endlos:</b> ein Lied nach dem anderen, jede Runde in einer neuen Tonart, manchmal in Moll, und etwas schneller. Wie weit kommst du?<br>
+    <b>Bosse:</b> Gewinnst du ein Lied auf Schwer, wartet sein Boss. Er greift von rechts an; wird er müde, landet er auf einer Note – spring drauf! Nach drei Treffern ist er besiegt – aber jeder Treffer macht ihn wütender. Du behältst die Leben, mit denen du das Lied beendet hast, und am Start wartet ein Herz: +1 Leben. Hohe Stimmen werden von oben angegriffen, tiefe von unten; die Bosse schneller Lieder machen das Lied noch schneller. In einer Gruppe stehen die besten Ergebnisse aller in der Rangliste der Gruppe.`,
+}
+Object.assign(TEXTS.de, {
+  'Every song becomes its own level. Land on the notes to play the melody.': 'Jedes Lied wird zu einem eigenen Level. Lande auf den Noten, um die Melodie zu spielen.',
+  'Song': 'Lied', 'Part': 'Stimme', 'Verse': 'Strophe', 'Load song file…': 'Lieddatei laden …',
+  '.smc from your program, or MusicXML (.musicxml, .mxl)': '.smc aus deinem Programm oder MusicXML (.musicxml, .mxl)',
+  'Easy': 'Leicht', 'Normal': 'Normal', 'Hard': 'Schwer', 'Play': 'Spielen', 'How to play': 'So wird gespielt', 'Fullscreen': 'Vollbild',
+  'Paused': 'Pause', 'Resume': 'Weiter', 'Restart': 'Neu starten', 'Menu': 'Menü', 'Play again': 'Nochmal', '♪ Listen': '♪ Anhören',
+  'Tip: turn your phone sideways for a wider view.': 'Tipp: Dreh dein Handy quer, dann siehst du mehr.',
+  'Classics': 'Klassik', 'Kids': 'Kinderlieder', 'Christmas': 'Weihnachten', 'Hymns & folk': 'Choräle & Volkslieder', 'Your library': 'Deine Bibliothek',
+  'Endless': 'Endlos', 'Endless – classics': 'Endlos – Klassiker', 'Endless – my library': 'Endlos – meine Bibliothek',
+  'Loading…': 'Wird geladen …', 'Reading…': 'Wird gelesen …', '(lyrics)': '(mit Text)', 'Lyrics from {p}': 'Text aus {p}',
+  'This score has no melody to play ({e})': 'Diese Noten haben keine spielbare Melodie ({e})',
+  'Loaded "{t}" · {n} parts': '„{t}“ geladen · {n} Stimmen',
+  'Best: {s}': 'Bestwert: {s}', 'Best: {s} · round {r}': 'Bestwert: {s} · Runde {r}', 'Choir challenge': 'Chor-Challenge',
+  'Get ready…': 'Mach dich bereit …', 'Go!': 'Los!', 'Tap to jump · hold for higher': 'Tippen zum Springen · halten für höher',
+  'double jump': 'Doppelsprung', 'magnet': 'Magnet', 'slow motion': 'Zeitlupe', 'fast ×2': 'schnell ×2', 'A shield for you 𝄐': 'Ein Schutzschild für dich 𝄐',
+  'Nice!': 'Schön!', 'Great!': 'Klasse!', 'Super!': 'Super!', 'Fantastic!': 'Fantastisch!', '{n} in a row · ×{m}': '{n} in Folge · ×{m}', 'Streak lost': 'Serie gerissen',
+  'Bravo!': 'Bravo!', 'You made it!': 'Geschafft!', 'Game over': 'Spiel vorbei', 'Score': 'Punkte', 'new best!': 'neuer Bestwert!', 'best {n}': 'Bestwert {n}',
+  '{a} of {b} notes': '{a} von {b} Noten', '{a} of {b} syllables & coins': '{a} von {b} Silben & Münzen', 'best streak {n}': 'beste Serie {n}',
+  '{n} stomped': '{n} besiegt', '{n} hits': '{n} Treffer', 'no damage!': 'ohne Treffer!', 'Encore: verse {n} ▶ (a bit faster)': 'Zugabe: Strophe {n} ▶ (etwas schneller)',
+  'verse {n}': 'Strophe {n}', 'Round {n}': 'Runde {n}', 'Round {n} · {key} · faster!': 'Runde {n} · {key} · schneller!', 'new key': 'neue Tonart',
+  'Endless: round {n}': 'Endlos: Runde {n}', '{n} rounds': '{n} Runden geschafft',
+  'duck': 'ducken', '🔇 no sound – tap to turn it on': '🔇 kein Ton – tippen zum Einschalten', 'Soprano': 'Sopran', 'Alto': 'Alt', 'Tenor': 'Tenor', 'Bass': 'Bass', 'upper': 'oben', 'lower': 'unten', 'voice': 'Stimme', 'staff': 'System',
+  'No notes found in this file.': 'In dieser Datei wurden keine Noten gefunden.',
+  'The Prima Donna': 'Die Primadonna', 'The Conductor': 'Der Dirigent', 'The Tuba': 'Die Tuba', 'The Double Bass Crab': 'Die Kontrabass-Krabbe',
+  'The Metronome': 'Das Metronom', 'The Organ': 'Die Orgel', 'Boss fights': 'Bosskämpfe', '⚔ Boss fight: {b} ▶': '⚔ Bosskampf: {b} ▶',
+  'Win on Hard and the boss is waiting: {b}': 'Gewinne auf Schwer, dann wartet der Boss: {b}', 'Now! Jump on it!': 'Jetzt! Spring drauf!',
+  'Hit! {n} to go': 'Treffer! Noch {n}', 'Too slow!': 'Zu langsam!', 'Boss defeated!': 'Boss besiegt!', 'The boss won': 'Der Boss hat gewonnen',
+  'The boss got away': 'Der Boss ist entkommen', 'Faster!': 'Schneller!',
+  'Hold the left or right edge to duck': 'Linken oder rechten Rand halten zum Ducken',
+  'Leaderboard': 'Rangliste', 'Extra life!': 'Extra-Leben!', 'Search songs…': 'Lieder suchen …', 'No songs found': 'Keine Lieder gefunden', 'Tap to start': 'Tippen zum Starten', 'Boss fight!': 'Bosskampf!', 'The leaderboard needs an internet connection.': 'Die Rangliste braucht eine Internetverbindung.', 'No results yet – be the first!': 'Noch keine Ergebnisse – sei die/der Erste!', 'Rank {n} of {m} in {g}': 'Platz {n} von {m} in {g}',
+  'Sings from above: diving high notes. A fast song, and she makes it faster!': 'Singt von oben: herabstürzende hohe Töne. Ein schnelles Lied – und sie macht es noch schneller!',
+  'Conducts from above: sharps fall on his beat, and he changes the tempo.': 'Dirigiert von oben: Kreuze fallen auf seinen Schlag, und er ändert das Tempo.',
+  'Booms from below: jump over the sound waves!': 'Dröhnt von unten: spring über die Schallwellen!',
+  'Pinches from below, and a fast song gets even faster!': 'Zwickt von unten – und ein schnelles Lied wird noch schneller!',
+  'An attack on every beat. Tick: jump! Tock: duck!': 'Ein Angriff auf jeden Schlag. Tick: springen! Tack: ducken!',
+  'Stacked chords roll at you: time your jump! Pipes come from below, sharps from above.': 'Gestapelte Akkorde rollen heran: spring im richtigen Moment! Pfeifen kommen von unten, Kreuze von oben.', '{n} of 3 boss hits': '{n} von 3 Treffern am Boss', 'Hold the left edge to duck': 'Linken Rand halten zum Ducken', 'This part has (almost) no notes.': 'Diese Stimme hat (fast) keine Noten.',
+})
+function applyTexts() {
+  document.documentElement.lang = LANG
+  for (const el of document.querySelectorAll('[data-t]')) el.textContent = T(el.dataset.t)
+  $('howto').innerHTML = HOWTO[LANG] || HOWTO.en
+  $('closeBtn').setAttribute('aria-label', LANG === 'de' ? 'Schließen' : 'Close')
+  $('songSearch').placeholder = '🔍 ' + T('Search songs…')
+  resize()
+  if (songSel.options.length) { const v = songSel.value; refreshSongs(false); if (Array.from(songSel.options).some((o) => o.value === v)) { songSel.value = v; refreshParts() } }
+}
+let startPart = ''
+LANG = /^de/i.test(new URLSearchParams(location.search).get('lang') || navigator.language || '') ? 'de' : 'en'
+applyTexts()
+
+// ---------- Start ----------
+try {
+  const xml = store.get('mh:xml')
+  if (xml && !APP) loaded = { score: parseSongText(xml, store.get('mh:xmlName')), key: 'file' }
+} catch (e) { loaded = null }
+if (APP) {
+  $('loadRow').hidden = true
+  $('fsBtn').classList.add('hidden')
+  $('closeBtn').classList.remove('hidden')
+  $('loadMsg').textContent = ''; $('loadMsg').removeAttribute('data-t')
+  $('closeBtn').onclick = () => { stopSong(); closeAudio(); toApp({ mh: 'close' }) }
+  addEventListener('message', (e) => {
+    const m = e.data
+    if (e.source !== window.parent || !m || typeof m.mh !== 'string') return
+    if (m.mh === 'library') {
+      lib = Array.isArray(m.songs) ? m.songs.filter((x) => x && x.id && x.title) : []
+      if (m.lang && m.lang !== LANG) { LANG = m.lang; applyTexts() }
+      if (m.start && lib.some((x) => x.id === m.start)) { store.set('mh:song', 'lib:' + m.start); startPart = m.part || '' }
+      groupName = m.group && m.start ? String(m.group) : ''; groupSong = groupName ? m.start : ''; board = null; boardAsked = false
+      refreshSongs(false)
+    } else if (m.mh === 'board') {
+      if (m.id !== groupSong) return
+      boardErr = !!m.error
+      board = !Array.isArray(m.rows) ? board : m.rows.filter((x) => x && typeof x.points === 'number').map((x) => ({ name: String(x.name || '♪'), part: String(x.part || ''), diff: String(x.diff), points: x.points | 0, stars: clamp(x.stars | 0, 0, 3), me: !!x.me }))
+      showBoard(); showRank()
+    } else if (m.mh === 'song') {
+      if (libWaiting === m.id) libWaiting = null
+      let res
+      try {
+        if (m.error) throw new Error(m.error)
+        res = parseSongText(m.text, m.name || 'score.smc')
+        songFromScore(res, defaultPart(res)) // has a melody?
+      } catch (err) { res = new Error(T('This score has no melody to play ({e})', { e: err.message || err })) }
+      libCache.set(m.id, res)
+      if (songSel.value === 'lib:' + m.id || songSel.value === 'endless:lib') refreshParts()
+    }
+  })
+  toApp({ mh: 'ready' })
+}
+refreshSongs(false)
+setDiff(DIFFS[diff] ? diff : 'normal')
+applyTexts()
+
+let lastT = performance.now()
+function frame(now) {
+  const dt = Math.min(.1, (now - lastT) / 1000); lastT = now
+  update(dt); draw()
+  requestAnimationFrame(frame)
+}
+requestAnimationFrame(frame)
+</script>
+</body>
+</html>
