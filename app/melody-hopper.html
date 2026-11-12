@@ -265,7 +265,10 @@ function staffParts(parts, base, hint, low, used, extra = 0, alt = []) {
   const add = (u, name, pick, more) => parts.push(Object.assign({}, u.loc, { name, pick, lyrics: u.lyr, notes: u.n, base, vocal }, more))
   // Divided somewhere in the song (not only at the start): a choir staff splits when an eighth of it has two parts.
   const n0 = used.length ? used[0].n : 0, div = used.length === 1 ? used[0].multi + extra : 0, need = vocal ? Math.max(8, .12 * n0) : .25 * n0
-  if (used.length >= 2) used.forEach((u, k) => add(u, k < 2 ? lab(k) : base + ' – ' + T('voice') + ' ' + (k + 1)))
+  // A choir staff with two layers: the top layer is the upper part; the lower part is the second layer where
+  // it has notes or rests, and the bottom note of the top layer's chords where there is only one layer.
+  if (used.length === 2 && vocal) { add(used[0], lab(0), 'top'); add(used[0], lab(1), 'bottom', { alt: [used[1].loc.vi ?? used[1].loc.voice, ...alt], notes: used[1].n }) }
+  else if (used.length >= 2) used.forEach((u, k) => add(u, k < 2 ? lab(k) : base + ' – ' + T('voice') + ' ' + (k + 1)))
   else if (used.length === 1 && div >= need) { add(used[0], lab(0), 'top'); add(used[0], lab(1), 'bottom', alt.length ? { alt } : null) }
   else if (used.length === 1) add(used[0], base)
 }
@@ -373,13 +376,14 @@ function songFromPart(score, partId) {
         const start = isChord ? lastOnset : pos
         if (!isChord) { lastOnset = pos; pos += dur; maxPos = Math.max(maxPos, pos) }
         const vo = txt(el, 'voice') || '1', isAlt = vo !== voice && alts.includes(vo)
+        if (isAlt && kid(el, 'rest') && !kid(el, 'cue') && (txt(el, 'staff') || '1') === staff) { ev.push({ rest: true, alt: true, beat: mStart + start / divisions, dur: dur / divisions }); continue }
         if (kid(el, 'cue') || kid(el, 'rest') || (vo !== voice && !isAlt) || (txt(el, 'staff') || '1') !== staff) continue
         const p = kid(el, 'pitch')
         if (!p) continue
         const pc = pitchOf(txt(p, 'step'), parseFloat(txt(p, 'alter') || '0') || 0, +txt(p, 'octave') - (men && gClef ? 1 : 0))
         const beat = mStart + start / divisions
         const prev = ev[ev.length - 1]
-        if (isChord && prev && !!prev.alt === isAlt && Math.abs(prev.beat - beat) < 1e-6) { if (low ? pc.midi < prev.midi : pc.midi > prev.midi) Object.assign(prev, pc); continue }
+        if (isChord && prev && !prev.rest && !!prev.alt === isAlt && Math.abs(prev.beat - beat) < 1e-6) { prev.n = (prev.n || 1) + 1; if (low ? pc.midi < prev.midi : pc.midi > prev.midi) Object.assign(prev, pc); continue }
         const ties = kids(el, 'tie').map((t) => t.getAttribute('type'))
         const not = kid(el, 'notations')
         const arts = not && kid(not, 'articulations')
@@ -389,7 +393,7 @@ function songFromPart(score, partId) {
           const v = parseInt(l.getAttribute('number') || '', 10) || k + 1, t = txt(l, 'text').replace(VERSE_NO, '')
           if (t && !lyrics[v]) lyrics[v] = { text: t, syl: txt(l, 'syllabic') }
         })
-        ev.push({ ...pc, beat, dur: dur / divisions, tieStart: ties.includes('start'), tieStop: ties.includes('stop'),
+        ev.push({ ...pc, n: 1, beat, dur: dur / divisions, tieStart: ties.includes('start'), tieStop: ties.includes('stop'),
           stacc: !!(arts && (kid(arts, 'staccato') || kid(arts, 'staccatissimo') || kid(arts, 'spiccato'))),
           ferm: !!(not && kid(not, 'fermata')),
           lyrics, alt: isAlt })
@@ -399,18 +403,20 @@ function songFromPart(score, partId) {
   }
   return finishSong(score.title, info.name, bpm, withAlt(ev), bars, keyChanges, mStart, dyns)
 }
-// ev: the part's notes, those of a small extra voice marked .alt: where the extra voice sings, it wins.
+// ev: the part's notes, those of the lower layer (the second voice) marked .alt: where the lower layer sings, it wins;
+// where it rests beside a single note of the top layer, the lower part rests too (.rest marks its rests).
+// Where there is no lower layer, the bottom notes of the top layer's chords stay.
 function withAlt(ev) {
   const alt = ev.filter((e) => e.alt)
-  if (!alt.length) return ev
+  if (!alt.length) return ev.filter((e) => !e.rest)
   alt.sort((a, b) => a.beat - b.beat)
-  const inAlt = (b) => {
+  const inAlt = (e) => {
     let lo = 0, hi = alt.length
-    while (lo < hi) { const m = (lo + hi) >> 1; if (alt[m].beat <= b + 1e-6) lo = m + 1; else hi = m }
+    while (lo < hi) { const m = (lo + hi) >> 1; if (alt[m].beat <= e.beat + 1e-6) lo = m + 1; else hi = m }
     const a = alt[lo - 1]
-    return !!a && b < a.beat + a.dur - 1e-6
+    return !!a && e.beat < a.beat + a.dur - 1e-6 && (!a.rest || (e.n || 1) < 2)
   }
-  return alt.concat(ev.filter((e) => !e.alt && !inAlt(e.beat)))
+  return alt.filter((e) => !e.rest).concat(ev.filter((e) => !e.alt && !e.rest && !inAlt(e)))
 }
 
 // Shared by MusicXML and .smc: tied notes become one note, overlaps are cut, dynamics and verses are attached.
@@ -480,6 +486,7 @@ function songFromSmc(score, partId) {
   const ev = [], stv = flow.staves[part.staffId].voices
   const evs = voice.events.map((e) => [e, false]).concat(low ? (part.alt || []).flatMap((vi) => ((stv[vi] || {}).events || []).map((e) => [e, true])) : [])
   for (const [e, isAlt] of evs) {
+    if (isAlt && e.kind === 'rest') { ev.push({ rest: true, alt: true, beat: frac(e.pos), dur: frac(e.dur) }); continue }
     if (e.kind !== 'chord') continue
     let top = null
     for (const n of e.notes) {
@@ -491,7 +498,7 @@ function songFromSmc(score, partId) {
     if (men && clefAt(frac(e.pos)) === 'treble') { top.midi -= 12; top.dia -= 7 }
     const arts = e.articulations || [], lyrics = {}
     for (const l of e.lyrics || []) if (l.text && !lyrics[l.verse || 1]) lyrics[l.verse || 1] = { text: l.text.replace(VERSE_NO, ''), syl: l.syllabic }
-    ev.push({ midi: top.midi, dia: top.dia, beat: frac(e.pos), dur: frac(e.dur), tieStart: top.tie,
+    ev.push({ midi: top.midi, dia: top.dia, n: e.notes.filter((x) => x.head !== 'slash').length, beat: frac(e.pos), dur: frac(e.dur), tieStart: top.tie,
       stacc: arts.includes('staccato') || arts.includes('staccatissimo'), ferm: arts.includes('fermata'), lyrics, alt: isAlt })
   }
   const total = frac(flow.length), bars = []

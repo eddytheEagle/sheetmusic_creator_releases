@@ -1,0 +1,1 @@
+export{r as openPdf}from"./pdf-DHr1BWuR.js";
